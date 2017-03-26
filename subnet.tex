@@ -20,7 +20,9 @@ The integration of such payment subnets within linked payment networks has not b
 
 We can look at this subnetworks concept as a way to enable groups within a payment network that transact at high volumes to efficiently rebalance their off-chain ledgers. Therefore, we could include some prototype of a rebalancing algorithm.
 
-The implementation would be similar to that of Sprites, instead we replace the two-way payment channel contract with a multi-party subnetwork contract, the details of which will need to be refined. Moreover, the state channel contract would require an update function to ensure progress on entry and exit requests.
+The implementation would be similar to that of Sprites, instead we replace the two-way payment channel contract with a multi-party subnetwork contract, the details of which will need to be refined. Moreover, the state channel contract would require an update function to ensure progress on subnetwork entry and exit requests.
+
+The main three contributions would be generalizing the sprites two way channels to multi-party subnetworks, integerating these subnetworks within payment networks, and creating an off-chain ledger rebalancing scheme for subnetworks.
 
 
 \end{document}
