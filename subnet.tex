@@ -12,9 +12,15 @@
 Two-way payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Forming a subnetwork of payment channels which allows for off-chain simultaneous rebalancing of connected channels would alleviate the problem. Implementation of this concept on the Ethereum block chain rather than Bitcoin can greatly simplify the model.
 \end{abstract}
 
-The design for bitcoin proposes using revocable secrets to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to greatly simplify off-chain interactions and dispute settlement.
+The design for bitcoin proposes using expiring allocations or revocable secrets to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to greatly simplify off-chain interactions and dispute settlement.
 
-In the Bitcoin proposition, altering the membership of nodes to subnetworks\footnote{Named Channel Factories in the Bitcoin paper.} requires the collaboration of all members of all subnetworks to sign a new first layer allocation. In Ethereum, using smart contracts, this requirement can be easily annulled, and subnetwork membership changed would only require the approval of the members affected subnetwork.
+In the Bitcoin proposition, altering the membership of nodes to subnetworks\footnote{Named Channel Factories in the Bitcoin paper.} requires the collaboration of all members of all subnetworks to sign a new first layer allocation. In Ethereum, using smart contracts, this requirement can be easily annulled, and subnetwork membership changed would only require the approval of members in the affected subnetwork.
+
+The integration of such payment subnets within linked payment networks has not been discussed. For example: a linked payment whereby some of the intermediaries in the chain are both members of the same payment subnet, and would like to use their channel in this subnet as a link in the chain.
+
+We can look at this subnetworks concept as a way to enable groups within a payment network that transact at high volumes to efficiently rebalance their off-chain ledgers. Therefore, we could include some prototype of a rebalancing algorithm.
+
+The implementation would be similar to that of Sprites, instead we replace the two-way payment channel contract with a multi-party subnetwork contract, the details of which will need to be refined. Moreover, the state channel contract would require an update function to ensure progress on entry and exit requests.
 
 
 \end{document}
