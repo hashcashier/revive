@@ -12,17 +12,17 @@
 Two-way payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Forming a subnetwork of payment channels which allows for off-chain simultaneous rebalancing of connected channels would alleviate the problem. Implementation of this concept on the Ethereum block chain rather than Bitcoin can greatly simplify the model.
 \end{abstract}
 
-The design for bitcoin proposes using expiring allocations or revocable secrets to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to greatly simplify off-chain interactions and dispute settlement.
+The design of these subnetworks for bitcoin proposes using expiring allocations or revocable secrets to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to greatly simplify off-chain interactions and dispute settlement.
 
-In the Bitcoin proposition, altering the membership of nodes to subnetworks\footnote{Named Channel Factories in the Bitcoin paper.} requires the collaboration of all members of all subnetworks to sign a new first layer allocation. In Ethereum, using smart contracts, this requirement can be easily annulled, and subnetwork membership changed would only require the approval of members in the affected subnetwork.
+In the Bitcoin proposition, altering the membership of nodes to subnetworks\footnote{Named Channel Factories in the Bitcoin paper.} requires the collaboration of all members of all subnetworks to sign a new first layer allocation. In Ethereum, using smart contracts, this requirement can be easily annulled, and subnetwork membership changed would only require the approval of members in the affected subnetwork and interaction with a single smart contract.
 
 The integration of such payment subnets within linked payment networks has not been discussed. For example: a linked payment whereby some of the intermediaries in the chain are both members of the same payment subnet, and would like to use their channel in this subnet as a link in the chain.
 
-We can look at this subnetworks concept as a way to enable groups within a payment network that transact at high volumes to efficiently rebalance their off-chain ledgers. Therefore, we could include some prototype of a rebalancing algorithm.
+An algorithm for subnet ledger rebalancing was not discussed. View the network as a graph. An edge represents the shared ledger between two nodes in the subnet. An algorithm which globally rebalances ledgers in a way that satisfies the local preferences of each node in the network (ie. lets nodes assign ratios to their edges, such that their total balances are distributed across their edges according to these ratios), would be a point of interest after the construction of the subnet model.
 
-The implementation would be similar to that of Sprites, instead we replace the two-way payment channel contract with a multi-party subnetwork contract, the details of which will need to be refined. Moreover, the state channel contract would require an update function to ensure progress on subnetwork entry and exit requests.
+The implementation would be similar to that of Sprites. The differences would mainly be generalizations of the channel models where we replace the two-way payment channel contract with a multi-party subnetwork contract. The state channel contract would also need some modifications. The exact details of these modifications will have to be refined.
 
-The main three contributions would be generalizing the sprites two way channels to multi-party subnetworks, integerating these subnetworks within payment networks, and creating an off-chain ledger rebalancing scheme for subnetworks.
+The main three contributions would be generalizing the sprites two way channels to multi-party subnetworks, integerating these subnetworks within payment networks, and creating a ledger rebalancing scheme for subnetworks.
 
 
 \end{document}
