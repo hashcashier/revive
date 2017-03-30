@@ -5,36 +5,80 @@
 \newcommand{\todo}[1]{{\color{red}\ TODO: {#1}}}
 
 \setlength{\droptitle}{-12em}
-\title{Payment Subnetworks\vspace{-5em}}
+\title{Payment Subnetworks\vspace{-4.5em}}
 \date{}
 \author{}
 
 \begin{document}
 \maketitle
 \begin{abstract}
-Two-way payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Forming a subnetwork of payment channels which allows for off-chain simultaneous rebalancing of connected channels would alleviate the problem. Implementation of this concept on the Ethereum block chain rather than Bitcoin can greatly simplify the model.
+Two-way payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Forming a subnetwork of payment channels which allows for off-chain simultaneous rebalancing of connected channels would alleviate this issue. Implementation of this concept on the Ethereum blockchain rather than on Bitcoin can greatly simplify the model and amend its possible functionality.
 \end{abstract}
 
 \section{Introduction}
-Off-chain payment protocols allow to move the burden of transaction settling from the blockchain to the two or more participating peers. Several proposals have surfaced the literature \todo{Please cite Lightning, raiden, sprites, you can go to Google Scholar, click on cite and download the bibtex citation that you can then include in the references.bib file}.
+Off-chain payment protocols, such as the lightning \cite{lightning} and raiden \cite{raiden} networks, allow to move the burden of transaction settling from the blockchain to the two or more participating peers. 
+
+Several new proposals have surfaced the literature that aim to improve the worst-case completion time of a transaction, such as in \cite{sprites}, or the scalability of block chain payments, as in \cite{scale}.
 
 The main contributions of this work as as follows:
 
 \begin{itemize}
-	\item We generalize the sprites two way channels to multi-party subnetworks
-	\item We integrate these subnetworks within payment networks
-	\item We create a ledger rebalancing scheme for subnetworks
+	\item We generalize the Sprites \cite{sprites} two way channels to multi-party subnetworks.
+	\item We integrate these subnetworks within global payment networks.
+	\item We create a ledger rebalancing scheme for subnetworks.
 \end{itemize}
 
 \section{Background}
-\todo{please explain the high level concepts of what the following technologies provide.}
-\subsection{Lightning}
-\subsection{Raiden}
-\subsection{Sprites}
-\subsection{Channel Factories}
+\todo{Explain high level concepts of what these technologies provide.}
 
-\paragraph{Channel Factories in Ethereum}
-In the Bitcoin proposition, altering the membership of nodes to subnetworks\footnote{Named Channel Factories in the Bitcoin paper.} requires the collaboration of all members of all subnetworks to sign a new first layer allocation. In Ethereum, using smart contracts, this requirement can be easily annulled, and subnetwork membership changed would only require the approval of members in the affected subnetwork and interaction with a single smart contract.
+\subsection{Bitcoin}
+\todo{write overview of bitcoin for completeness in the future} \cite{bitcoin}
+\subsection{Lightning}
+The Bitcoin Lightning Network\cite{lightning} is an architecture that is designed to enable participants in the protocol to conduct a high volume of transactions in a secure manner without having to publish all of them to the Bitcoin blockchain.
+
+The network is designed to be composed of peer-to-peer micropayment channels that enable two directly connected peers to maintain and use a shared ledger to securely conduct transactions, or for two indirectly connected peers to perform a transaction through a chain of directly connected intermediaries.
+
+For a channel to be established between two entities, initial deposits representing the total amounts that can be transacted in this channel have to be put on the blockchain in escrow. The security lies in the assurance that in case of a dispute of payment or a need to withdraw deposits, the latest state of the ledger that the parties have agreed upon can be submitted to the blockchain and each party can claim its balance.
+
+This design uses the bitcoin blockchain as a root of trust that would act upon an escrow account, and scales the blockchain essentially through aggregating transactions between parties that interact often, enabling high interaction throughputs without incurring the costs of on-chain publishing.
+
+\subsection{Ethereum}
+\todo{write overview of ethereum for completeness in the future} \cite{ethereum}
+
+\subsection{Raiden}
+The Raiden Network\cite{raiden} is a work in progress that aims to implement the same concepts proposed in the Lightning Network design, but on the Ethereum blockchain using smart contracts. Transaction costs are estimated to be 7 orders of magnitude lower using Raiden than natively on the blockchain, which would pave the way for efficient micropayments.
+
+The project is as of now open-source, and has released a working proof of concept software version. However, Raiden has not yet been fully documented as to formally describe its techniques and functionality, but promises to deliver high scalability in the range of a million transactions per second, and transaction completion within a fraction of a second.
+
+Because the Ethereum blockchain supports the creation of custom exchangeable tokens, the Raiden protocol aims to deliver the ability to make off-chain transactions with any token that follows the standard token API\cite{ethereum}.
+
+\todo{Ask Raiden developers if they have some hidden white paper}
+
+
+\subsection{Sprites}
+Sprites\cite{sprites} are payment channels designed for Ethereum. Their design is also inspired by Lightning and Raiden, but they aim to minimize the worst-case collateral costs of indirect off-chain payments. Collateral cost is calculated as the amount of time funds are frozen, or held in escrow, instead of being utilized or invested, multiplied by the amount of money that is suspended from use.
+
+When performing a linked payment
+\footnote{An indirect off-chain payment using intermediaries that are directly "linked"}
+the amount of money that is to be transacted has to be frozen across the entire chain of payment channels involved, until the transaction completes or terminates. This requirement is present in Lightning, Raiden and Sprites.
+
+However, the achieved worst case time that a linked payment needs to complete or cancel in Sprites is not proportional to the length of the chain of intermediaries used to execute the payment, but is instead constant, unlike in Lightning and Sprites.
+
+Since the total funds held in escrow during a linked payment using Sprites is proportional to the length of the transaction chain, and the upper bound on the amount of time is constant, the worst case collateral cost per payment that is only linearly, rather than quadratically\footnote{as in Lightning and Raiden}, proportional to the length of the chain used.
+
+The innovative use of the turing complete smart contracts model offered by Ethereum to implement the payment channel concept, rather than the direct migration of an architecture meant for Bitcoin's limited UTXO
+\footnote{Unspent Transaction Output}
+model over to Ethereum, is what enables Sprites to provide its cost optimization.
+
+\subsection{Channel Factories}
+\cite{scale} proposes a design for Bitcoin whereby a group of parties announces the creation of a Channel Factory on the blockchain. When announcing the creation of this factory, its members first have to deposit their respective funds into escrow, which can then be used as balance within the factory. This factory would allow its participants to create as many off-chain payment channels as they want without committing each channel to the blockchain.
+
+For a party to join or depart a Channel Factory, however, a new on-chain factory has to be announced, where the deposits are transferred from the old factory's escrow account, and member balances are updated accordingly. In these entry and exit cases, all members of the Channel Factory have to approve and sign the aforementioned modifications.
+
+\todo{Mention scalability and expectations}
+
+%\paragraph{Channel Factories in Ethereum}
+%In the Bitcoin proposition, altering the membership of nodes to subnetworks\footnote{Named Channel Factories in the Bitcoin paper.} requires the collaboration of all members of all subnetworks to sign a new first layer allocation. In Ethereum, using smart contracts, this requirement can be easily annulled, and subnetwork membership changed would only require the approval of members in the affected subnetwork and interaction with a single smart contract.
 
 \section{Fundamental differences between Bitcoin and Ethereum}
 The design of these subnetworks for bitcoin proposes using expiring allocations or revocable secrets to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to greatly simplify off-chain interactions and dispute settlement.
