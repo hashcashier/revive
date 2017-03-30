@@ -1,5 +1,8 @@
 \documentclass[12pt]{article}
 \usepackage{titling}
+\usepackage{color}
+
+\newcommand{\todo}[1]{{\color{red}\ TODO: {#1}}}
 
 \setlength{\droptitle}{-12em}
 \title{Payment Subnetworks\vspace{-5em}}
@@ -12,17 +15,42 @@
 Two-way payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Forming a subnetwork of payment channels which allows for off-chain simultaneous rebalancing of connected channels would alleviate the problem. Implementation of this concept on the Ethereum block chain rather than Bitcoin can greatly simplify the model.
 \end{abstract}
 
-The design of these subnetworks for bitcoin proposes using expiring allocations or revocable secrets to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to greatly simplify off-chain interactions and dispute settlement.
+\section{Introduction}
+Off-chain payment protocols allow to move the burden of transaction settling from the blockchain to the two or more participating peers. Several proposals have surfaced the literature \todo{Please cite Lightning, raiden, sprites, you can go to Google Scholar, click on cite and download the bibtex citation that you can then include in the references.bib file}.
 
+The main contributions of this work as as follows:
+
+\begin{itemize}
+	\item We generalize the sprites two way channels to multi-party subnetworks
+	\item We integrate these subnetworks within payment networks
+	\item We create a ledger rebalancing scheme for subnetworks
+\end{itemize}
+
+\section{Background}
+\todo{please explain the high level concepts of what the following technologies provide.}
+\subsection{Lightning}
+\subsection{Raiden}
+\subsection{Sprites}
+\subsection{Channel Factories}
+
+\paragraph{Channel Factories in Ethereum}
 In the Bitcoin proposition, altering the membership of nodes to subnetworks\footnote{Named Channel Factories in the Bitcoin paper.} requires the collaboration of all members of all subnetworks to sign a new first layer allocation. In Ethereum, using smart contracts, this requirement can be easily annulled, and subnetwork membership changed would only require the approval of members in the affected subnetwork and interaction with a single smart contract.
 
-The integration of such payment subnets within linked payment networks has not been discussed. For example: a linked payment whereby some of the intermediaries in the chain are both members of the same payment subnet, and would like to use their channel in this subnet as a link in the chain.
+\section{Fundamental differences between Bitcoin and Ethereum}
+The design of these subnetworks for bitcoin proposes using expiring allocations or revocable secrets to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to greatly simplify off-chain interactions and dispute settlement.
+
+\section{Combining Payment Subnets and Payment Networks}
+
+The integration of payment subnets within linked payment networks has not been discussed. For example: a linked payment whereby some of the intermediaries in the chain are both members of the same payment subnet, and would like to use their channel in this subnet as a link in the chain.
 
 An algorithm for subnet ledger rebalancing was not discussed. View the network as a graph. An edge represents the shared ledger between two nodes in the subnet. An algorithm which globally rebalances ledgers in a way that satisfies the local preferences of each node in the network (ie. lets nodes assign ratios to their edges, such that their total balances are distributed across their edges according to these ratios), would be a point of interest after the construction of the subnet model.
 
 The implementation would be similar to that of Sprites. The differences would mainly be generalizations of the channel models where we replace the two-way payment channel contract with a multi-party subnetwork contract. The state channel contract would also need some modifications. The exact details of these modifications will have to be refined.
 
-The main three contributions would be generalizing the sprites two way channels to multi-party subnetworks, integerating these subnetworks within payment networks, and creating a ledger rebalancing scheme for subnetworks.
+\section{Related Work}
+\section{Conclusion}
 
+\bibliography{references}
+\bibliographystyle{unsrt}
 
 \end{document}
