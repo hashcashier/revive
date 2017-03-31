@@ -12,18 +12,17 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Two-way payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Forming a subnetwork of payment channels which allows for off-chain simultaneous rebalancing of connected channels would alleviate this issue. Implementation of this concept on the Ethereum blockchain rather than on Bitcoin can greatly simplify the model and amend its possible functionality.
+Two-party duplex payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Forming a subnetwork of payment channels which allows for off-chain simultaneous rebalancing of connected channels would alleviate this issue. Implementation of this concept on the Ethereum blockchain rather than on Bitcoin can greatly simplify the model and amend its possible functionality.
 \end{abstract}
 
 \section{Introduction}
 Off-chain payment protocols, such as the lightning \cite{lightning} and raiden \cite{raiden} networks, allow to move the burden of transaction settling from the blockchain to the two or more participating peers. 
 
-Several new proposals have surfaced the literature that aim to improve the worst-case completion time of a transaction, such as in \cite{sprites}, or the scalability of block chain payments, as in \cite{scale}.
+Several new proposals have surfaced the literature that aim to improve the worst-case completion time of an off-chain transaction, such as in \cite{sprites}, or the scalability of blockchain payments, as in \cite{scale}.
 
-The main contributions of this work as as follows:
-
+The main contributions of this work are as follows:\vspace{-0.9em}
 \begin{itemize}
-	\item We generalize the Sprites \cite{sprites} two way channels to multi-party subnetworks.
+	\item We incorporate the Sprites channels as a building unit of a hierarchy of multi-party subnetworks.
 	\item We integrate these subnetworks within global payment networks.
 	\item We create a ledger rebalancing scheme for subnetworks.
 \end{itemize}
@@ -71,25 +70,32 @@ The innovative use of the turing complete smart contracts model offered by Ether
 model over to Ethereum, is what enables Sprites to provide its cost optimization.
 
 \subsection{Channel Factories}
-\cite{scale} proposes a design for Bitcoin whereby a group of parties announces the creation of a Channel Factory on the blockchain. When announcing the creation of this factory, its members first have to deposit their respective funds into escrow, which can then be used as balance within the factory. This factory would allow its participants to create as many off-chain payment channels as they want without committing each channel to the blockchain.
+\cite{scale} proposes a design for Bitcoin whereby a group of parties announces the creation of a Channel Factory on the blockchain. When announcing the creation of this factory, its members first have to deposit their respective funds into a shared escrow account. They can then use their deposits in this on-chain escrow to fund the creation of off-chain escrow accounts between peers to create as many payment channels as needed off-chain.
 
 For a party to join or depart a Channel Factory, however, a new on-chain factory has to be announced, where the deposits are transferred from the old factory's escrow account, and member balances are updated accordingly. In these entry and exit cases, all members of the Channel Factory have to approve and sign the aforementioned modifications.
 
+An advantage that this construct has is that it allows the off-chain redistribution of deposits in the main escrow account of the Channel Factory between different payment channels constructed by the factory. Other designs require that any deposit to, or withdrawal of funds from, a payment channel escrow account happen purely on-chain, while in this design, only transactions with the main escrow account need to happen on-chain.
+
+Essentially, this design enables the secure creation of off-chain m-out-of-m multisig wallets that are funded through one on-chain n-out-of-n multisig wallet, where the m participants in an off-chain wallet are a subset of the n participats of the on-chain wallet.
+
 \todo{Mention scalability and expectations}
 
-%\paragraph{Channel Factories in Ethereum}
-%In the Bitcoin proposition, altering the membership of nodes to subnetworks\footnote{Named Channel Factories in the Bitcoin paper.} requires the collaboration of all members of all subnetworks to sign a new first layer allocation. In Ethereum, using smart contracts, this requirement can be easily annulled, and subnetwork membership changed would only require the approval of members in the affected subnetwork and interaction with a single smart contract.
-
 \section{Fundamental differences between Bitcoin and Ethereum}
-The design of these subnetworks for bitcoin proposes using expiring allocations or revocable secrets to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to greatly simplify off-chain interactions and dispute settlement.
+\todo{Ethereum has smart contracts, Bitcoin has UTXO, etc.. highlight difference in functionality potential}
+
+\section{Channel Factories in Ethereum}
+
+The design of Channel Factories for Bitcoin proposes using expiring commitments or revocable transactions to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to simplify off-chain interactions and dispute settlement.
+
+\todo{Make diagrams to better illustrate following paragraph}
+
+The collaboration between stakeholders of a commitment of funds, however, when an operation that affects the redistribution of deposits needs to occur, cannot be circumvented or more efficiently designed. This means that when new members need to join a payment factory with a deposit, all current members must sign off on the new redistribution of deposits that occurs. Moreover, any ledger rebalancing which involves moving deposits across payment channels would require unanimous approval by the stake holders.
 
 \section{Combining Payment Subnets and Payment Networks}
 
-The integration of payment subnets within linked payment networks has not been discussed. For example: a linked payment whereby some of the intermediaries in the chain are both members of the same payment subnet, and would like to use their channel in this subnet as a link in the chain.
+The details of integration of payment subnets within linked payment networks have not been discussed. For example: a linked payment whereby some of the intermediaries in the chain are both members of the same payment subnet, and would like to use their channel in this subnet as a link in the chain.
 
-An algorithm for subnet ledger rebalancing was not discussed. View the network as a graph. An edge represents the shared ledger between two nodes in the subnet. An algorithm which globally rebalances ledgers in a way that satisfies the local preferences of each node in the network (ie. lets nodes assign ratios to their edges, such that their total balances are distributed across their edges according to these ratios), would be a point of interest after the construction of the subnet model.
-
-The implementation would be similar to that of Sprites. The differences would mainly be generalizations of the channel models where we replace the two-way payment channel contract with a multi-party subnetwork contract. The state channel contract would also need some modifications. The exact details of these modifications will have to be refined.
+An algorithm for subnet ledger rebalancing was not presented. Viewing a payment channel subnetwork constructed by a Channel Factory as a graph: An edge represents the shared ledger between two nodes in the subnet. An algorithm which rebalances ledgers in a way that satisfies the local preferences of each node in the network (ie. lets nodes assign ratios to their edges, such that their total balances are distributed across their edges according to these ratios), would be a point of interest after the construction of the subnet model.
 
 \section{Related Work}
 \section{Conclusion}
