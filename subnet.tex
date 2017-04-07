@@ -2,6 +2,10 @@
 \usepackage{titling}
 \usepackage{color}
 
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+
+
 \newcommand{\todo}[1]{{\color{red}\ TODO: {#1}}}
 
 \setlength{\droptitle}{-12em}
@@ -12,7 +16,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Two-party duplex payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Forming a subnetwork of payment channels which allows for off-chain simultaneous rebalancing of connected channels would alleviate this issue. Implementation of this concept on the Ethereum blockchain rather than on Bitcoin can greatly simplify the model and amend its possible functionality.
+Two-party duplex payment channels have been designed and linked together to construct payment networks to allow payment routing between parties that are not directly connected. A problem that members of this architecture might face is the need to rebalance ledgers. Enabling a set of nodes connected by payment channels to rebalance their ledgers off-chain would alleviate this issue. Implementation of this concept on the Ethereum blockchain rather than on Bitcoin can greatly simplify the model and amend its possible functionality.
 \end{abstract}
 
 \section{Introduction}
@@ -20,12 +24,14 @@ Off-chain payment protocols, such as the lightning \cite{lightning} and raiden \
 
 Several new proposals have surfaced the literature that aim to improve the worst-case completion time of an off-chain transaction, such as in \cite{sprites}, or the scalability of blockchain payments, as in \cite{scale}.
 
-The main contributions of this work are as follows:\vspace{-0.9em}
-\begin{itemize}
-	\item We incorporate the Sprites channels as a building unit of a hierarchy of multi-party subnetworks.
-	\item We integrate these subnetworks within global payment networks.
-	\item We create a ledger rebalancing scheme for subnetworks.
-\end{itemize}
+The main contribution of this work is a ledger rebalancing scheme that enables each participant in the rebalancing to specify the amount of credit that they would like to gain or lose in each channel. The result of the scheme is a set of transactions that that need to be executed to carry out the rebalancing. We then enable the atomic execution of the set of payments on Ethereum using the Sprites payment channels \cite{sprites}, extending their atomic linked-payments functionality to a more general atomic payment-set functionality.
+
+%The main contributions of this work are as follows:\vspace{-0.9em}
+%\begin{itemize}
+%	\item We incorporate the Sprites channels as a building unit of a hierarchy of multi-party subnetworks.
+%	\item We integrate these subnetworks within global payment networks.
+%	\item We create a ledger rebalancing scheme for subnetworks.
+%\end{itemize}
 
 \section{Background}
 \todo{Explain high level concepts of what these technologies provide.}
@@ -83,19 +89,58 @@ Essentially, this design enables the secure creation of off-chain m-out-of-m mul
 \section{Fundamental differences between Bitcoin and Ethereum}
 \todo{Ethereum has smart contracts, Bitcoin has UTXO, etc.. highlight difference in functionality potential}
 
-\section{Channel Factories in Ethereum}
+\section{Rebalancing Scheme}
 
-The design of Channel Factories for Bitcoin proposes using expiring commitments or revocable transactions to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to simplify off-chain interactions and dispute settlement.
+\begin{figure}[!h]
+\centering
+\begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=4cm,
+                    thick,main node/.style={circle,draw,font=\sffamily\Large\bfseries}]
 
-\todo{Make diagrams to better illustrate following paragraph}
+  \node[main node] (A) {A};
+  \node[main node] (B) [right of=A] {B};
+  \node[main node] (C) [below of=B] {C};
+  \node[main node] (D) [below of=A] {D};
 
-The collaboration between stakeholders of a commitment of funds, however, when an operation that affects the redistribution of deposits needs to occur, cannot be circumvented or more efficiently designed. This means that when new members need to join a payment factory with a deposit, all current members must sign off on the new redistribution of deposits that occurs. Moreover, any ledger rebalancing which involves moving deposits across payment channels would require unanimous approval by the stake holders.
+  \draw[-, every node/.style={font=\sffamily\small}]
+  	(A) edge node[near start] {500}
+  			 node[near end] {600} (B)
+  		edge node[right, very near start] {200}
+  			 node[left, very near end] {300} (C)
+  		edge node[left, near start] {250}
+  			 node[left, near end] {320} (D)
+  	(B) edge node[near start] {300}
+  			 node[near end] {200} (C)
+  		edge node[right, near start] {100}
+  			 node[left, near end] {970} (D)
+  	(C) edge node[near start] {370}
+  		 	 node[near end] {1290} (D)
+  	;
+\end{tikzpicture}
+\caption{Example set of nodes}
+\end{figure}
 
-\section{Combining Payment Subnets and Payment Networks}
+\subsection{Cooperative specification of rebalancing requirements}
+Participants specify the credits they wish to gain or lose in each channel
 
-The details of integration of payment subnets within linked payment networks have not been discussed. For example: a linked payment whereby some of the intermediaries in the chain are both members of the same payment subnet, and would like to use their channel in this subnet as a link in the chain.
+\subsection{Generation of rebalancing transaction set}
+Linear program to solve constraints
 
-An algorithm for subnet ledger rebalancing was not presented. Viewing a payment channel subnetwork constructed by a Channel Factory as a graph: An edge represents the shared ledger between two nodes in the subnet. An algorithm which rebalances ledgers in a way that satisfies the local preferences of each node in the network (ie. lets nodes assign ratios to their edges, such that their total balances are distributed across their edges according to these ratios), would be a point of interest after the construction of the subnet model.
+\subsection{Atomic execution of rebalancing}
+All payments must either execute or terminate
+
+%\section{Channel Factories in Ethereum}
+
+%The design of Channel Factories for Bitcoin proposes using expiring commitments or revocable transactions to proceed with off-chain payments. A design for Ethereum can make use of signatures and round numbers to simplify off-chain interactions and dispute settlement.
+
+%\todo{Make diagrams to better illustrate following paragraph}
+
+%The collaboration between stakeholders of a commitment of funds, however, when an operation that affects the redistribution of deposits needs to occur, cannot be circumvented or more efficiently designed. This means that when new members need to join a payment factory with a deposit, all current members must sign off on the new redistribution of deposits that occurs. Moreover, any ledger rebalancing which involves moving deposits across payment channels would require unanimous approval by the stake holders.
+
+%\section{Combining Payment Subnets and Payment Networks}
+
+%The details of integration of payment subnets within linked payment networks have not been discussed. For example: a linked payment whereby some of the intermediaries in the chain are both members of the same payment subnet, and would like to use their channel in this subnet as a link in the chain.
+
+%An algorithm for subnet ledger rebalancing was not presented. Viewing a payment channel subnetwork constructed by a Channel Factory as a graph: An edge represents the shared ledger between two nodes in the subnet. An algorithm which rebalances ledgers in a way that satisfies the local preferences of each node in the network (ie. lets nodes assign ratios to their edges, such that their total balances are distributed across their edges according to these ratios), would be a point of interest after the construction of the subnet model.
 
 \section{Related Work}
 \section{Conclusion}
