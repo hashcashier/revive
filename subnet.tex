@@ -1,6 +1,7 @@
 \documentclass[12pt]{article}
 \usepackage{titling}
 \usepackage{color}
+\usepackage{float}
 
 \usepackage{tikz}
 \usetikzlibrary{arrows}
@@ -91,7 +92,7 @@ Essentially, this design enables the secure creation of off-chain m-out-of-m mul
 
 \section{Rebalancing Scheme}
 
-\begin{figure}[!h]
+\begin{figure}[H]
 \centering
 \begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=4cm,
                     thick,main node/.style={circle,draw,font=\sffamily\Large\bfseries}]
@@ -102,31 +103,67 @@ Essentially, this design enables the secure creation of off-chain m-out-of-m mul
   \node[main node] (D) [below of=A] {D};
 
   \draw[-, every node/.style={font=\sffamily\small}]
-  	(A) edge node[near start] {500}
-  			 node[near end] {600} (B)
-  		edge node[right, very near start] {200}
-  			 node[left, very near end] {300} (C)
-  		edge node[left, near start] {250}
-  			 node[left, near end] {320} (D)
-  	(B) edge node[near start] {300}
-  			 node[near end] {200} (C)
-  		edge node[right, near start] {100}
-  			 node[left, near end] {970} (D)
-  	(C) edge node[near start] {370}
-  		 	 node[near end] {1290} (D)
+  	(A) edge node[near start] {250}
+  			 node[near end] {750} (B)
+  		edge node[right, very near start] {750}
+  			 node[left, very near end] {250} (C)
+  		edge node[left, near start] {0}
+  			 node[left, near end] {1000} (D)
+  	(B) edge node[near start] {100}
+  			 node[near end] {800} (C)
+  		edge node[right, near start] {150}
+  			 node[left, near end] {0} (D)
+  	(C) edge node[near start] {750}
+  		 	 node[near end] {0} (D)
   	;
 \end{tikzpicture}
-\caption{Example set of nodes}
+\caption{Example skewed network}
+\label{skewed}
 \end{figure}
 
+A skewed network which might wish to rebalance its ledgers is presented in figure \ref{skewed}.
+
 \subsection{Cooperative specification of rebalancing requirements}
-Participants specify the credits they wish to gain or lose in each channel
+Participants specify the maximum balance they wish to gain or lose in each channel, while preserving their total balance and not exceeding channel funds. We denote the maximum balance shift that a node u is willing to sustain in its payment channel with a node v by $\Delta_{u,v}$, additionally when using a directional arrow, $\overrightarrow{\Delta_{u,v}} = X$ signifies that u is willing to lose a balance of X in the u-v payment channel.
 
 \subsection{Generation of rebalancing transaction set}
-Linear program to solve constraints
+There are two independent approaches, with different flexibilities.
+
+\textbf{Variant 1} Maximize a linear function in O(N) variables subject to O(N) linear inequality constraints. (N is the number of payment channels.)
+
+Maximize: $\Sigma_{u,v} \delta_{u,v}$ (Total transacted funds) subject to:
+
+\begin{enumerate}
+	\item $\forall u, v: \Delta_{u,v} > 0 \wedge \Delta_{v,u} < 0 \Leftrightarrow 0 \leq \delta_{u,v} \leq min(\Delta_{u,v}, -\Delta_{v,u}) $
+
+	\item $\forall u: \Sigma_{v} \delta_{v,u} = \Sigma_{v} \delta_{u,v} $
+	
+\end{enumerate}
+
+The first constraint definition introduces linear constraints on the program when two parties connected by a payment channel agree on the flow of payment that they are willing to have in the channel. If A wishes to dispose of balance in the AB channel, and B wishes to gain balance in the same channel, then the $\delta_{a,b}$ parameter is given an upper bound.
+
+The second constraint defines conservation of balance, such that the set of resulting transactions is a zero sum rebalance. It is assumed that $\Delta_{u,v} \leq bal_{u,v}$ for all inputs $\Delta_{u,v}$ such that no payment channel is used past its total funding.
+
+
+This variant allows participants to specify for each payment channel that they are either willing to gain or lose up to a specific balance, but not both.
+
+
+\textbf{Variant 2} Maximize a convex quadtratic function in O(N) variables subject to O(N) linear inequality constraints. (N is the number of payment channels.)
+
+Maximize: $\Sigma_{u,v} \delta_{u,v}^2$ (Sum of squares of transacted funds) subject to:
+
+\begin{enumerate}
+	\item $\forall u, v: \delta_{u,v} = -\delta_{v,u}$
+
+	\item $\forall u, v: \delta_{u,v} \leq min(\overrightarrow{\Delta_{u,v}},\overleftarrow{\Delta_{v,u}})$ 
+
+	\item $\Sigma_{u,v} \delta_{u,v} = 0$
+\end{enumerate}
+
+The first constraint definition introduces the symmetry between $\delta_{u,v}$ and $\delta_{v,u}$, whereas in the previous model, only one of the two was ever present. This gives us more flexibility in the second constraint definition, which specifies that funds flowing in a direction across a payment channel must obey the both the upper and lower bounds set by the channel owners for each direction. This means that participants can specify how much balance they are willing to gain, and how much they are willing to lose, in a given channel, at the same time. This comes at the cost of having to solve for a convex quadratic function instead of a linear one. The third definition conserves balance.
 
 \subsection{Atomic execution of rebalancing}
-All payments must either execute or terminate
+\todo{All payments must either execute or terminate.}
 
 %\section{Channel Factories in Ethereum}
 
