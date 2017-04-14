@@ -2,7 +2,8 @@
 \usepackage{titling}
 \usepackage{color}
 \usepackage{float}
-
+\usepackage{graphicx}
+\graphicspath{ {images/} }
 \usepackage{tikz}
 \usetikzlibrary{arrows}
 
@@ -164,6 +165,12 @@ The first constraint definition introduces the symmetry between $\delta_{u,v}$ a
 
 \subsection{Atomic execution of rebalancing}
 \todo{All payments must either execute or terminate.}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{protocol}
+\caption{Rebalancing Protocol}
+\end{figure}
 
 %\section{Channel Factories in Ethereum}
 
