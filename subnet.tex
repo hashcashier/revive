@@ -163,14 +163,28 @@ Maximize: $\Sigma_{u,v} \delta_{u,v}^2$ (Sum of squares of transacted funds) sub
 
 The first constraint definition introduces the symmetry between $\delta_{u,v}$ and $\delta_{v,u}$, whereas in the previous model, only one of the two was ever present. This gives us more flexibility in the second constraint definition, which specifies that funds flowing in a direction across a payment channel must obey the both the upper and lower bounds set by the channel owners for each direction. This means that participants can specify how much balance they are willing to gain, and how much they are willing to lose, in a given channel, at the same time. This comes at the cost of having to solve for a convex quadratic function instead of a linear one. The third definition conserves balance.
 
-\subsection{Atomic execution of rebalancing}
-\todo{All payments must either execute or terminate.}
+\subsection{Rebalancing Protocol}
+
+The protocol steps broadly defined in figure \ref{protocol} describe how the set of transactions is designed to either all atomically complete or fail.
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{protocol}
 \caption{Rebalancing Protocol}
+\label{protocol}
 \end{figure}
+
+The set of payments is composed of multiple single conditional payments. The payments may only complete when the signatures of all participants in the rebalancing can be obtained on the payment set.
+
+At first, the current elected leader waits for rebalancing initiation requests from participants in the subnetwork. When enough requests are received (past an arbitrarily defined threshold), then the leader sends a request to all subnet members which asks for confirmation of their participation in this round of rebalancing.
+
+After participation confirmations are received, the leader then multi-casts to the participants which nodes will participate in the current round, and asks them to freeze the payment channels they wish to involve in this rebalancing round with a conditional payment, of an undetermined amount, that may only complete when all subnetwork members sign the set of transactions which the leader will propose in the next step.
+
+After participants freeze their payment channels, and send confirmation of this to the leader node, the leader then proceeds to solve the linear program described above to generate a set of rebalancing transactions. The set is then sent to all nodes for verification and signing.
+
+Once all signatures are obtained, they are multicast to all participants, such that they can unfreeze the payment channels. Any lack of cooperation in this step between parties can be disputed on chain through submission of the (mutually agreed upon) channel freezing confirmation and the unanimously signed payment set.
+
+A new leader is then chosen via round-robin selection.
 
 %\section{Channel Factories in Ethereum}
 
