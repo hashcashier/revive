@@ -37,6 +37,10 @@ contract PaymentChannelRebalanceable {
             throw;
     }
     function verifyAllSignatures(address[] pub, bytes32 h, uint8[] v, bytes32[] r, bytes32[] s) {
+        uint j = (3 - playermap[msg.sender]) - 1;
+        address counterParty = players[j];
+        bool counterPartyAgrees = false;
+        
         for (uint i = 0; i < pub.length; i++) {
             verifySignature(
                 pub[i],
@@ -44,7 +48,13 @@ contract PaymentChannelRebalanceable {
                 v[i],      // V
                 r[i],      // R
                 s[i]);     // S
+            
+            if (pub[i] == counterParty)
+                counterPartyAgrees = true;
         }
+        
+        if (!counterPartyAgrees)
+            throw;
     }
     function verifyMerkleChain(bytes32[] chain) {
         // chain must be [L R L R L R.... T]
