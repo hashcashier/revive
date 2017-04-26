@@ -219,3 +219,4 @@ TSWLatexianTemp*
 # pycharm
 */.idea/*
 */__pycache__/*
+*.swp
