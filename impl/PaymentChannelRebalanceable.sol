@@ -99,7 +99,7 @@ contract PaymentChannelRebalanceable {
 	    return sha3(r);
     }
 
-    function PaymentChannel(address[2] _players) {
+    function PaymentChannelRebalanceable(address[2] _players) {
         for (uint i = 0; i < 2; i++) {
             players[i] = _players[i];
             playermap[_players[i]] = i + 1;
