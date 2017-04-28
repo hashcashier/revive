@@ -15,7 +15,7 @@ def int_to_bytes(x):
     return utils.int_to_bytes((1<<256) + x if x < 0 else x)
 
 
-class Player():
+class PaymentChannelPlayer():
     def __init__(self, sk, i, contract, addrs):
         self.sk = sk
         self.i = i
@@ -26,18 +26,20 @@ class Player():
         self.lastCommit = None, (0, 0, 0, 0)
         self.lastProposed = None
 
+
     def deposit(self, amt):
         self.contract.deposit(value=amt, sender=self.sk)
+
 
     def acceptInputs(self, r, payL, payR, wdrawL, wdrawR):
         assert self.status == "OK"
         assert r == self.lastRound + 1
         # Assumption - don't call acceptInputs(r,...) multiple times
 
-        depositsL = self.contract.deposits(0);
-        depositsR = self.contract.deposits(1);
-        withdrawalsL = self.contract.withdrawals(0);
-        withdrawalsR = self.contract.withdrawals(1);
+        depositsL = self.contract.deposits(0)
+        depositsR = self.contract.deposits(1)
+        withdrawalsL = self.contract.withdrawals(0)
+        withdrawalsR = self.contract.withdrawals(1)
 
         _, (creditsL, creditsR, withdrawnL, withdrawnR) = self.lastCommit
 
@@ -62,6 +64,7 @@ class Player():
         broadcast(self, r, self.h, sig)
         return sig
 
+
     def receiveSignatures(self, r, sigs):
         assert self.status == "OK"
         assert r == self.lastRound + 1
@@ -72,6 +75,7 @@ class Player():
         self.lastCommit = sigs, self.lastProposed
         self.lastRound += 1
 
+
     def getstatus(self):
         print('[Local view of Player %d]' % self.i)
         print('Last round:', self.lastRound)
@@ -81,6 +85,7 @@ class Player():
         print('Status:', self.status)
         print('[L] deposits:', depositsL, 'credits:', creditsL, 'withdrawals:', wdrawL)
         print('[R] deposits:', depositsR, 'credits:', creditsR, 'withdrawals:', wdrawR)
+
 
     def update(self):
         # Place our updated state in the contract

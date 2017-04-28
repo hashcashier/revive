@@ -2,7 +2,7 @@ from ethereum import tester
 from ethereum import utils
 from ethereum._solidity import get_solidity
 SOLIDITY_AVAILABLE = get_solidity() is not None
-from player import Player
+from player import PaymentChannelPlayer
 from protocol import getstatus, broadcast, completeRound
 
 # Logging
@@ -21,7 +21,7 @@ keys = [tester.k1,
 addrs = list(map(utils.privtoaddr, keys))
 
 # Create the contract
-contract_code = open('PaymentChannelRebalanceable.sol').read()
+contract_code = open('channel.sol').read()
 contract = s.abi_contract(contract_code, language='solidity',
                           constructor_parameters= ((addrs[0], addrs[1]),) )
 
@@ -32,7 +32,7 @@ contract = s.abi_contract(contract_code, language='solidity',
 s.mine()
 base = s.snapshot()
 
-players = [Player(sk, i, contract, addrs) for i,sk in enumerate(keys)]
+players = [PaymentChannelPlayer(sk, i, contract, addrs) for i, sk in enumerate(keys)]
 
 def test1():
     # Some test behaviors
