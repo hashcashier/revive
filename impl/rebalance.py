@@ -49,37 +49,37 @@ def simulation_scenario_1():
 
     # 2 out of 3 participants signal rebalance
     for i in range(0, 2):
-        participants[i].send_rebalance_request(leader)
-        leader.receive_rebalance_request(i)
+        req = participants[i].send_rebalance_request(leader)
+        leader.receive_rebalance_request(req)
+
+    # 2/3 >= 1/2 threshold
+    assert(leader.threshold_passed)
 
     # Leader attempts to initiate rebalance, all participants respond
     for i in range(0, 3):
-        leader.send_initiation_request(participants[i])
-        participants[i].receive_initiation_request(leader)
-        participants[i].send_participation_confirmation(leader)
-        leader.receive_participation_confirmation(participants[i])
+        req = leader.send_initiation_request(participants[i])
+        participants[i].receive_initiation_request(req)
+        resp = participants[i].send_participation_confirmation(leader)
+        leader.receive_participation_confirmation(resp)
 
     # Leader requests channel freeze from all participants
     for i in range(0, 3):
-        leader.send_channel_freeze_requests(participants[i])
-        participants[i].receive_channel_freeze_request(leader)
-        participants[i].send_frozen_channel_info(leader)
-        leader.receive_frozen_channel_info(participants[i])
+        req = leader.send_channel_freeze_requests(participants[i])
+        participants[i].receive_channel_freeze_request(req)
+        resp = participants[i].send_frozen_channel_info(leader)
+        leader.receive_frozen_channel_info(resp)
 
     # Leader generates rebalance transactions, requests signatures
     leader.generate_rebalance_set()
     for i in range(0, 3):
-        leader.send_rebalance_transactions(participants[i])
-        participants[i].receive_rebalance_transactions(leader)
-        participants[i].send_signed_rebalance_set(leader)
-        leader.receive_signed_rebalance_set(participants[i])
+        req = leader.send_rebalance_transactions(participants[i])
+        participants[i].receive_rebalance_transactions(req)
+        resp = participants[i].send_signed_rebalance_set(leader)
+        leader.receive_signed_rebalance_set(resp)
 
     # Leader announces fully signed transaction set
     for i in range(0, 3):
         leader.send_set_signatures(participants[i])
-
-    # New arbitrary leader
-    leader = PaymentSubnetLeader(participants)
 
     # Display result
     for i in range(0, 3):
