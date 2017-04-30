@@ -1,6 +1,5 @@
-
-def broadcast(p, r, h, sig):
-    print("player[%d] broadcasts %s %s %s" % (p.i, r, h, sig))
+from player import PaymentChannelPlayer
+from participant import PaymentSubnetParticipant
 
 
 def getstatus(contract):
@@ -10,9 +9,10 @@ def getstatus(contract):
     creditsR = contract.credits(1)
     wdrawL = contract.withdrawals(0)
     wdrawR = contract.withdrawals(1)
+    print('CONTRACT ' + str(contract.address))
     print('Status:' + ['OK','PENDING'][contract.status()])
-    print('[L] deposits:' + str(depositsL) + ' credits:' + str(creditsL) + ' withdrawals:' + str(wdrawL))
-    print('[R] deposits:' + str(depositsR) + ' credits:' + str(creditsR)+ ' withdrawals:' + str(wdrawR))
+    print('[L] deposits: ' + str(depositsL) + ' credits: ' + str(creditsL) + ' withdrawals: ' + str(wdrawL))
+    print('[R] deposits: ' + str(depositsR) + ' credits: ' + str(creditsR) + ' withdrawals: ' + str(wdrawR))
 
 
 def completeRound(players, r, payL, payR, wdrawL, wdrawR):
@@ -21,3 +21,37 @@ def completeRound(players, r, payL, payR, wdrawL, wdrawR):
     sigs = (sigL, sigR)
     players[0].receiveSignatures(r, sigs)
     players[1].receiveSignatures(r, sigs)
+
+
+def init_contracts(blockchain_state, contract_code, public_addresses):
+    n = len(public_addresses)
+    return [blockchain_state.abi_contract(contract_code,
+                                  language='solidity',
+                                  constructor_parameters=((public_addresses[i], public_addresses[j]),))
+            for i in range(0, n) for j in range(i+1, n)]
+
+
+def init_channel_players(contracts, private_keys, public_addresses):
+    players = {}
+    n = len(private_keys)
+    k = 0
+    for i in range(0, n):
+        for j in range(i+1, n):
+            players[contracts[k]] = [
+                PaymentChannelPlayer(private_keys[i], 0, contracts[k], [public_addresses[i], public_addresses[j]]),
+                PaymentChannelPlayer(private_keys[j], 1, contracts[k], [public_addresses[i], public_addresses[j]])]
+            completeRound(players[contracts[k]], 0, 0, 0, 0, 0)
+            k += 1
+    return players
+
+
+def init_subnet_participants(contracts, players, public_addresses):
+    participant_player_roles = [list() for _ in public_addresses]
+    n = len(public_addresses)
+    k = 0
+    for i in range(0, n):
+        for j in range(i+1, n):
+            participant_player_roles[i].append(players[contracts[k]][0])
+            participant_player_roles[j].append(players[contracts[k]][1])
+            k += 1
+    return [PaymentSubnetParticipant(roles) for roles in participant_player_roles]

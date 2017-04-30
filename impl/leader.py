@@ -9,13 +9,13 @@ class PaymentSubnetLeader:
     def receive_rebalance_request(self, req):
         pass
 
-    def send_initiation_request(self):
+    def send_initiation_request(self, participant):
         pass
 
     def receive_participation_confirmation(self, req):
         pass
 
-    def send_channel_freeze_requests(self):
+    def send_channel_freeze_requests(self, participant):
         pass
 
     def receive_frozen_channel_info(self, req):
@@ -24,11 +24,11 @@ class PaymentSubnetLeader:
     def generate_rebalance_set(self):
         pass
 
-    def send_rebalance_transactions(self):
+    def send_rebalance_transactions(self, participant):
         pass
 
     def receive_signed_rebalance_set(self, req):
         pass
 
-    def send_set_signatures(self):
+    def send_set_signatures(self, participant):
         pass

@@ -2,7 +2,6 @@ from ethereum import utils
 from ethereum._solidity import get_solidity
 SOLIDITY_AVAILABLE = get_solidity() is not None
 
-from protocol import broadcast
 from crypto import sign, verify_signature
 
 
@@ -13,6 +12,10 @@ def int_to_bytes(x):
     # pyethereum int to bytes does not handle negative numbers
     assert -(1<<255) <= x < (1<<255)
     return utils.int_to_bytes((1<<256) + x if x < 0 else x)
+
+
+def broadcast(p, r, h, sig):
+    print("player[%s][%d] broadcasts %s %s %s" % (p.contract.address, p.i, r, h, sig))
 
 
 class PaymentChannelPlayer():
@@ -55,7 +58,8 @@ class PaymentChannelPlayer():
 
         self.lastProposed = (creditsL, creditsR, withdrawalsL, withdrawalsR)
 
-        self.h = utils.sha3(zfill(utils.int_to_bytes(r)) +
+        self.h = utils.sha3(self.contract.address +
+                            zfill(utils.int_to_bytes(r)) +
                             zfill(int_to_bytes(creditsL)) +
                             zfill(int_to_bytes(creditsR)) +
                             zfill(utils.int_to_bytes(withdrawalsL)) +

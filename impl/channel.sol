@@ -123,19 +123,19 @@ contract PaymentChannelRebalanceable {
     // State channel update function
     function update(uint[3] sig, int r, int[2] _credits, uint[2] _withdrawals)
             onlyplayers {
-    	
+
         // Only update to states with larger round number
         if (r <= bestRound)
             return;
-    
+
         // Check the signature of the other party
     	uint i = (3 - playermap[msg.sender]) - 1;
-        var _h = sha3(r, _credits, _withdrawals);
+        var _h = sha3(address(this), r, _credits, _withdrawals);
     	var V =  uint8 (sig[0]);
     	var R = bytes32(sig[1]);
     	var S = bytes32(sig[2]);
     	verifySignature(players[i], _h, V, R, S);
-    
+
     	// Update the state
     	credits[0] = _credits[0];
     	credits[1] = _credits[1];
@@ -144,7 +144,7 @@ contract PaymentChannelRebalanceable {
     	bestRound = r;
         EventUpdate(r);
     }
-    
+
     // State channel update function when latest change was due to rebalance
     function updateAfterRebalance(
         uint8[] V,
@@ -169,9 +169,9 @@ contract PaymentChannelRebalanceable {
         verifyAllSignatures(participants, instanceHash, V, R, S);
 
         // Verify merkle chain
-        assert(sha3(r, _credits, _withdrawals) == transactionMerkleChain[0]);
+        assert(sha3(address(this), r, _credits, _withdrawals) == transactionMerkleChain[0]);
         verifyMerkleChain(transactionMerkleChain);
-        
+
         // Update the state
     	credits[0] = _credits[0];
     	credits[1] = _credits[1];
@@ -188,13 +188,13 @@ contract PaymentChannelRebalanceable {
     	deadline = block.number + DELTA; // Set the deadline for collecting inputs or updates
         EventPending(block.number, deadline);
     }
-    
+
     function finalize() {
     	assert( status == Status.PENDING );
     	assert( block.number > deadline );
-    
+
     	// Note: Is idempotent, may be called multiple times
-    
+
     	// Withdraw the maximum amount of money
     	withdrawals[0] += uint(int(deposits[0]) + credits[0]);
     	withdrawals[1] += uint(int(deposits[1]) + credits[1]);

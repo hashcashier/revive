@@ -3,69 +3,104 @@ from ethereum import utils
 from ethereum._solidity import get_solidity
 SOLIDITY_AVAILABLE = get_solidity() is not None
 from player import PaymentChannelPlayer
-from protocol import getstatus, broadcast, completeRound
+from protocol import getstatus, completeRound, init_contracts, init_channel_players, init_subnet_participants
+from participant import PaymentSubnetParticipant
+from leader import PaymentSubnetLeader
 
 # Logging
 from ethereum import slogging
 slogging.configure(':INFO,eth.vm:INFO')
 
+# Best case scenario.
+def simulation_scenario_1():
+    # Create test blockchain
+    blockchain_state = tester.state()
+    blockchain_state.mine()
+    tester.gas_limit = 3141592
 
-# Create the simulated blockchain
-s = tester.state()
-s.mine()
-tester.gas_limit = 3141592
+    private_keys = tester.keys[0:3]
+    public_addresses = list(map(utils.privtoaddr, private_keys))
 
+    # Create the contract
+    contract_code = open('channel.sol').read()
+    contracts = init_contracts(blockchain_state, contract_code, public_addresses)
+    blockchain_state.mine()
 
-keys = [tester.k1,
-        tester.k2]
-addrs = list(map(utils.privtoaddr, keys))
+    # Create snapshots at each phase
+    state_snapshots = [blockchain_state.snapshot()]
 
-# Create the contract
-contract_code = open('channel.sol').read()
-contract = s.abi_contract(contract_code, language='solidity',
-                          constructor_parameters= ((addrs[0], addrs[1]),) )
+    # Initialize channel players and subnet participants
+    players = init_channel_players(contracts, private_keys, public_addresses)
+    participants = init_subnet_participants(contracts, players, public_addresses)
 
+    # Create initial unbalanced setting
+    players[contracts[0]][0].deposit(100) # 100 A : B 0
+    getstatus(contracts[0])
+    players[contracts[1]][1].deposit(100) # 0   A : C 100
+    getstatus(contracts[1])
+    players[contracts[2]][0].deposit(100) # 100 B : C 0
+    getstatus(contracts[2])
 
-# Take a snapshot before trying out test cases
-#try: s.revert(s.snapshot())
-#except: pass # FIXME: I HAVE NO IDEA WHY THIS IS REQUIRED
-s.mine()
-base = s.snapshot()
+    # Save pre-rebalance snapshot
+    state_snapshots.append(blockchain_state.snapshot())
 
-players = [PaymentChannelPlayer(sk, i, contract, addrs) for i, sk in enumerate(keys)]
+    # Begin protocol, assign arbitrary leader
+    leader =  PaymentSubnetLeader(participants)
 
-def test1():
-    # Some test behaviors
-    getstatus(contract)
-    players[0].deposit(10)
-    getstatus(contract)
-    completeRound(players, 0, 5, 0, 0, 0)
+    # 2 out of 3 participants signal rebalance
+    for i in range(0, 2):
+        participants[i].send_rebalance_request(leader)
+        leader.receive_rebalance_request(i)
 
-    # Update
-    players[0].getstatus()
-    players[0].update()
-    getstatus(contract)
+    # Leader attempts to initiate rebalance, all participants respond
+    for i in range(0, 3):
+        leader.send_initiation_request(participants[i])
+        participants[i].receive_initiation_request(leader)
+        participants[i].send_participation_confirmation(leader)
+        leader.receive_participation_confirmation(participants[i])
 
-    # Check some assertions
-    try:
-        completeRound(players, 1, 6, 0, 0, 0) # Should fail
-    except AssertionError:
-        pass # Should fail
-    else:
-        raise(ValueError("Too much balance!"))
+    # Leader requests channel freeze from all participants
+    for i in range(0, 3):
+        leader.send_channel_freeze_requests(participants[i])
+        participants[i].receive_channel_freeze_request(leader)
+        participants[i].send_frozen_channel_info(leader)
+        leader.receive_frozen_channel_info(participants[i])
 
-    completeRound(players, 1, 0, 2, 0, 1)
-    players[0].getstatus()
+    # Leader generates rebalance transactions, requests signatures
+    leader.generate_rebalance_set()
+    for i in range(0, 3):
+        leader.send_rebalance_transactions(participants[i])
+        participants[i].receive_rebalance_transactions(leader)
+        participants[i].send_signed_rebalance_set(leader)
+        leader.receive_signed_rebalance_set(participants[i])
 
-    print('Triggering')
-    contract.trigger(sender=keys[0])
-    players[0].update()
-    s.mine(15)
+    # Leader announces fully signed transaction set
+    for i in range(0, 3):
+        leader.send_set_signatures(participants[i])
 
-    print('Finalize')
-    contract.finalize()
-    getstatus(contract)
+    # New arbitrary leader
+    leader = PaymentSubnetLeader(participants)
+
+    # Display result
+    for i in range(0, 3):
+        print('Triggering')
+        contracts[i].trigger(sender=players[contracts[i]][0].sk)
+        players[contracts[i]][0].update()
+        blockchain_state.mine(15)
+
+        print('Finalize')
+        contracts[i].finalize()
+        getstatus(contracts[i])
 
 
 if __name__ == '__main__':
-    test1()
+    simulation_scenario_1()
+
+
+    # # Check some assertions
+    # try:
+    #     completeRound(players, 1, 6, 0, 0, 0) # Should fail
+    # except AssertionError:
+    #     pass # Should fail
+    # else:
+    #     raise(ValueError("Too much balance!"))
