@@ -32,6 +32,7 @@ def simulation_scenario_1():
     # Initialize channel players and subnet participants
     players = init_channel_players(contracts, private_keys, public_addresses)
     participants = init_subnet_participants(contracts, players, public_addresses)
+    player_participant_map = dict((player, participant) for participant in participants for player in participant.player_roles)
 
     # Create initial unbalanced setting
     players[contracts[0]][0].deposit(100) # 100 A : B 0
@@ -70,7 +71,11 @@ def simulation_scenario_1():
         leader.receive_frozen_channel_info(resp)
 
     # Leader generates rebalance transactions, requests signatures
-    leader.rebalance_transactions = []
+    leader.rebalance_transactions = [
+        [contracts[0].address, 0, -50, 50, 0, 0],
+        [contracts[1].address, 0, -50, 50, 0, 0],
+        [contracts[2].address, 0, -50, 50, 0, 0],
+    ]
     leader.generate_rebalance_set()
     for i in range(0, 3):
         req = leader.send_rebalance_transactions(participants[i])
@@ -86,8 +91,10 @@ def simulation_scenario_1():
     # Display result
     for i in range(0, 3):
         print('Triggering')
-        contracts[i].trigger(sender=players[contracts[i]][0].sk)
-        players[contracts[i]][0].update()
+        player = players[contracts[i]][0]
+        contracts[i].trigger(sender=player.sk)
+        participant = player_participant_map[player]
+        participant.update_after_rebalance(player.contract.address)
         blockchain_state.mine(15)
 
         print('Finalize')

@@ -1,9 +1,9 @@
-from player import state_to_bytes
+from player import state_to_bytes_unpack
 from participant import PaymentSubnetParticipant
 from typing import List
 from merkle_tree import merkle_root
 from ethereum import utils
-from crypto import verify_signature
+from crypto import verify_signature, hash_array
 
 THRESHOLD = 0.5
 
@@ -66,8 +66,8 @@ class PaymentSubnetLeader:
                     rebalance_participants.update(player.addrs)
         self.rebalance_participants = sorted(list(rebalance_participants))
 
-        transactions_merkle_root = merkle_root([state_to_bytes(trans) for trans in self.rebalance_transactions], utils.sha3)
-        participants_hash = utils.sha3(b''.join(self.rebalance_participants))
+        transactions_merkle_root = merkle_root([state_to_bytes_unpack(trans) for trans in self.rebalance_transactions], utils.sha3)
+        participants_hash = hash_array(self.rebalance_participants)
         self.instance_hash = utils.sha3(participants_hash + transactions_merkle_root)
 
     def send_rebalance_transactions(self, participant):

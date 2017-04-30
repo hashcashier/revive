@@ -11,6 +11,7 @@ contract PaymentChannelRebalanceable {
     event EventInit();
     event EventUpdate(int r);
     event LogBytes32(bytes32 b);
+    event LogAddress(address[] a);
     event EventPending(uint T1, uint T2);
 
     // Utility functions
@@ -40,7 +41,7 @@ contract PaymentChannelRebalanceable {
         uint j = (3 - playermap[msg.sender]) - 1;
         address counterParty = players[j];
         bool counterPartyAgrees = false;
-        
+
         for (uint i = 0; i < pub.length; i++) {
             verifySignature(
                 pub[i],
@@ -48,22 +49,21 @@ contract PaymentChannelRebalanceable {
                 v[i],      // V
                 r[i],      // R
                 s[i]);     // S
-            
+
             if (pub[i] == counterParty)
                 counterPartyAgrees = true;
         }
-        
+
         if (!counterPartyAgrees)
             throw;
     }
-    function verifyMerkleChain(bytes32[] chain) {
-        // chain must be [L R L R L R.... T]
-        for (uint i = 1; i < chain.length-1; i = i + 2) {
-            var hash = sha3(chain[i-1], chain[i]);
-            assert((hash == chain[i+1]) || (hash == chain[i+2]));
+    function verifyMerkleChain(bytes32 link, bytes32[] chain, bool[] markleChainLinkleft) {
+        for (uint i = 0; i < chain.length-1; i ++) {
+            link = markleChainLinkleft[i] ? sha3(chain[i], link) : sha3(link, chain[3]);
+            assert(link == chain[i+1]);
         }
     }
-    
+
     // Signature struct (hacky way to enable nested array as function param)
     struct Sig {
         uint V;
@@ -81,12 +81,12 @@ contract PaymentChannelRebalanceable {
 
     // Constant (set in constructor)
     address[2] public players;
-    mapping (address => uint) playermap;    
+    mapping (address => uint) playermap;
 
     /////////////////////////////////////
-    // Payment Channel - Application specific data 
+    // Payment Channel - Application specific data
     ////////////////////////////////////
-    
+
     // State channel states
     int [2] public credits;
     uint[2] public withdrawals;
@@ -153,6 +153,7 @@ contract PaymentChannelRebalanceable {
         address[] participants,
         bytes32 instanceHash,
         bytes32[] transactionMerkleChain,
+        bool[] markleChainLinkleft,
         int r,
         int[2] _credits,
         uint[2] _withdrawals)
@@ -164,13 +165,15 @@ contract PaymentChannelRebalanceable {
 
         // Check the signatures of all parties
         var participantsHash = sha3(participants);
+        LogAddress(participants);
+        LogBytes32(participantsHash);
         var treeRoot = transactionMerkleChain[transactionMerkleChain.length-1];
         assert(sha3(participantsHash, treeRoot) == instanceHash);
-        verifyAllSignatures(participants, instanceHash, V, R, S);
+        // verifyAllSignatures(participants, instanceHash, V, R, S);
 
         // Verify merkle chain
-        assert(sha3(address(this), r, _credits, _withdrawals) == transactionMerkleChain[0]);
-        verifyMerkleChain(transactionMerkleChain);
+        // var h = sha3(address(this), r, _credits, _withdrawals);
+        // verifyMerkleChain(h, transactionMerkleChain, markleChainLinkleft);
 
         // Update the state
     	credits[0] = _credits[0];

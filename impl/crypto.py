@@ -14,3 +14,16 @@ def verify_signature(addr, h, V_R_S):
     addr_ = utils.sha3(pub[1:])[12:]
     assert addr_ == addr
     return True
+
+
+def hash_array(arr):
+    arr_addr = [utils.decode_addr(x) for x in arr]
+    print("ARRAY VERSIONS:")
+    print(arr)
+    print(arr_addr)
+    print("HASH VERSIONS:")
+    print(utils.sha3(arr))
+    print(utils.sha3(arr_addr))
+    print(utils.sha3(b''.join(arr)))
+    print(utils.sha3(b''.join(arr_addr)))
+    return utils.sha3(b''.join([utils.decode_addr(x) for x in arr]))

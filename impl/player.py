@@ -18,6 +18,9 @@ def broadcast(p, r, h, sig):
     print("player[%s][%d] broadcasts %s %s %s" % (p.contract.address, p.i, r, h, sig))
 
 
+def state_to_bytes_unpack(args):
+    return state_to_bytes(*args)
+
 def state_to_bytes(contract, r, credits_L, credits_R, withdrawal_L, withdrawal_R):
     return contract +\
            zfill(utils.int_to_bytes(r)) +\
@@ -101,3 +104,15 @@ class PaymentChannelPlayer():
         sigs, (creditsL, creditsR, withdrawalsL, withdrawalsR) = self.lastCommit
         sig = sigs[1] if self.i == 0 else sigs[0]
         self.contract.update(sig, self.lastRound, (creditsL, creditsR), (withdrawalsL, withdrawalsR), sender=self.sk)
+
+    def update_after_rebalance(self, V, R, S, participants, instance_hash, merkle_chain, sides):
+        _, (creditsL, creditsR, withdrawalsL, withdrawalsR) = self.lastCommit
+        self.contract.updateAfterRebalance(V, R, S,
+                                           participants,
+                                           instance_hash,
+                                           merkle_chain,
+                                           sides,
+                                           self.lastRound,
+                                           (creditsL, creditsR),
+                                           (withdrawalsL, withdrawalsR),
+                                           sender=self.sk)

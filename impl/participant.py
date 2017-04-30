@@ -1,18 +1,20 @@
-from merkle_tree import merkle_root
-from player import PaymentChannelPlayer, state_to_bytes
+from merkle_tree import merkle_root, merkle_tree, merkle_chain
+from player import PaymentChannelPlayer, state_to_bytes_unpack
 from ethereum import utils
-from crypto import sign, verify_signature
+from crypto import sign, verify_signature, hash_array
 
 
 class PaymentSubnetParticipant:
     def __init__(self, roles = list()):
         self.player_roles = roles
+        self.contract_player = dict([(player.contract.address, player) for player in roles])
         self.private_key = roles[0].sk
         self.public_address = utils.privtoaddr(self.private_key)
         self.wants_rebalance = True # TODO This should be set as a preference at some point.
         self.frozen_channels = set()
         self.rebalance_transactions = None
         self.rebalance_participants = None
+        self.rebalance_signatures = None
 
     def add_payment_channel_role(self, role: PaymentChannelPlayer):
         self.player_roles.append(role)
@@ -51,18 +53,20 @@ class PaymentSubnetParticipant:
 
     def receive_rebalance_transactions(self, req):
         assert(req['participant'] == self)
-        transactions = req['transactions']
+        self.rebalance_transactions = req['transactions']
         channel_contracts = [player.contract.address for player in self.player_roles]
 
-        for contract, round, payL, payR, wdrawL, wdrawR in transactions:
+        for contract, round, creditsL, creditsR, withdrawnL, withdrawnR in self.rebalance_transactions:
             if contract not in channel_contracts:
                 continue
             # TODO Assert transaction validity
 
-        self.transactions_merkle_root = merkle_root([state_to_bytes(trans) for trans in transactions], utils.sha3)
+        self.transactions_merkle_tree = merkle_tree([state_to_bytes_unpack(trans) for trans in self.rebalance_transactions],
+                                                    utils.sha3)
+        self.transactions_merkle_root = self.transactions_merkle_tree.build()
 
         self.rebalance_participants = req['participants']
-        self.participants_hash = utils.sha3(b''.join(self.rebalance_participants))
+        self.participants_hash = hash_array(self.rebalance_participants)
 
         self.instance_hash = utils.sha3(self.participants_hash + self.transactions_merkle_root)
 
@@ -76,3 +80,25 @@ class PaymentSubnetParticipant:
         for public_address in signatures:
             assert(verify_signature(public_address, self.instance_hash, signatures[public_address]))
         self.rebalance_signatures = req['signatures']
+
+        for transaction in self.rebalance_transactions:
+            if transaction[0] not in self.contract_player:
+                continue
+            player = self.contract_player[transaction[0]]
+            player.lastCommit = [], transaction[2:]
+            player.lastRound += 1
+
+    def update_after_rebalance(self, contract):
+        player = self.contract_player[contract]
+        V, R, S = [], [], []
+        for public_address in self.rebalance_signatures:
+            v, r, s = self.rebalance_signatures[public_address]
+            V.append(v)
+            R.append(r.to_bytes(32, byteorder='big'))
+            S.append(s.to_bytes(32, byteorder='big'))
+
+        chain, sides = merkle_chain(
+            self.transactions_merkle_tree,
+            next(i for i, v in enumerate(self.rebalance_transactions) if v[0] == contract))
+
+        player.update_after_rebalance(V, R, S, self.rebalance_participants, self.instance_hash, chain, sides)
