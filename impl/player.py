@@ -18,6 +18,15 @@ def broadcast(p, r, h, sig):
     print("player[%s][%d] broadcasts %s %s %s" % (p.contract.address, p.i, r, h, sig))
 
 
+def state_to_bytes(contract, r, credits_L, credits_R, withdrawal_L, withdrawal_R):
+    return contract +\
+           zfill(utils.int_to_bytes(r)) +\
+           zfill(int_to_bytes(credits_L)) +\
+           zfill(int_to_bytes(credits_R)) +\
+           zfill(utils.int_to_bytes(withdrawal_L)) +\
+           zfill(utils.int_to_bytes(withdrawal_R))
+
+
 class PaymentChannelPlayer():
     def __init__(self, sk, i, contract, addrs):
         self.sk = sk
@@ -58,12 +67,8 @@ class PaymentChannelPlayer():
 
         self.lastProposed = (creditsL, creditsR, withdrawalsL, withdrawalsR)
 
-        self.h = utils.sha3(self.contract.address +
-                            zfill(utils.int_to_bytes(r)) +
-                            zfill(int_to_bytes(creditsL)) +
-                            zfill(int_to_bytes(creditsR)) +
-                            zfill(utils.int_to_bytes(withdrawalsL)) +
-                            zfill(utils.int_to_bytes(withdrawalsR)))
+        self.h = utils.sha3(state_to_bytes(self.contract.address, r, creditsL, creditsR, withdrawalsL, withdrawalsR))
+
         sig = sign(self.h, self.sk)
         broadcast(self, r, self.h, sig)
         return sig

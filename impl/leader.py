@@ -1,6 +1,9 @@
-from player import PaymentChannelPlayer
+from player import state_to_bytes
 from participant import PaymentSubnetParticipant
 from typing import List
+from merkle_tree import merkle_root
+from ethereum import utils
+from crypto import verify_signature
 
 THRESHOLD = 0.5
 
@@ -13,6 +16,8 @@ class PaymentSubnetLeader:
         self.participating_channels = set()
         self.channel_balances = {}
         self.rebalance_transactions = None
+        self.rebalance_participants = None
+        self.rebalance_signatures = {}
 
     def receive_rebalance_request(self, req):
         participant = req['participant']
@@ -54,13 +59,34 @@ class PaymentSubnetLeader:
 
     def generate_rebalance_set(self):
         # TODO Solve Linear Program
-        pass
+        rebalance_participants = set()
+        for participant in self.subnet_participants:
+            for player in participant.player_roles:
+                if player.contract.address in self.participating_channels:
+                    rebalance_participants.update(player.addrs)
+        self.rebalance_participants = sorted(list(rebalance_participants))
+
+        transactions_merkle_root = merkle_root([state_to_bytes(trans) for trans in self.rebalance_transactions], utils.sha3)
+        participants_hash = utils.sha3(b''.join(self.rebalance_participants))
+        self.instance_hash = utils.sha3(participants_hash + transactions_merkle_root)
 
     def send_rebalance_transactions(self, participant):
-        return {'leader': self, 'participant': participant, 'transactions': self.rebalance_transactions}
+        return {
+            'leader': self,
+            'participant': participant,
+            'transactions': self.rebalance_transactions,
+            'participants': self.rebalance_participants
+        }
 
     def receive_signed_rebalance_set(self, req):
-        pass
+        assert(req['leader'] == self)
+        assert(req['participant'].public_address in self.rebalance_participants)
+        assert(verify_signature(req['participant'].public_address, self.instance_hash, req['signature']))
+        self.rebalance_signatures[req['participant'].public_address] = req['signature']
 
     def send_set_signatures(self, participant):
-        pass
+        return {
+            'leader': self,
+            'participant': participant,
+            'signatures': self.rebalance_signatures,
+        }

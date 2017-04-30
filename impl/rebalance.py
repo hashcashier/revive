@@ -70,6 +70,7 @@ def simulation_scenario_1():
         leader.receive_frozen_channel_info(resp)
 
     # Leader generates rebalance transactions, requests signatures
+    leader.rebalance_transactions = []
     leader.generate_rebalance_set()
     for i in range(0, 3):
         req = leader.send_rebalance_transactions(participants[i])
@@ -79,7 +80,8 @@ def simulation_scenario_1():
 
     # Leader announces fully signed transaction set
     for i in range(0, 3):
-        leader.send_set_signatures(participants[i])
+        req = leader.send_set_signatures(participants[i])
+        participants[i].receive_set_signatures(req)
 
     # Display result
     for i in range(0, 3):
