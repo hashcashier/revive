@@ -2,10 +2,7 @@ from ethereum import utils
 from ethereum._solidity import get_solidity
 SOLIDITY_AVAILABLE = get_solidity() is not None
 
-from crypto import sign, verify_signature
-
-
-zfill = lambda s: (32-len(s))*b'\x00' + s
+from crypto import sign, verify_signature, zfill
 
 
 def int_to_bytes(x):

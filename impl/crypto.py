@@ -1,6 +1,8 @@
 import bitcoin
 from ethereum import utils
 
+zfill = lambda s: (32-len(s))*b'\x00' + s
+
 def sign(h, priv):
     assert len(h) == 32
     V, R, S = bitcoin.ecdsa_raw_sign(h, priv)
@@ -17,13 +19,4 @@ def verify_signature(addr, h, V_R_S):
 
 
 def hash_array(arr):
-    arr_addr = [utils.decode_addr(x) for x in arr]
-    print("ARRAY VERSIONS:")
-    print(arr)
-    print(arr_addr)
-    print("HASH VERSIONS:")
-    print(utils.sha3(arr))
-    print(utils.sha3(arr_addr))
-    print(utils.sha3(b''.join(arr)))
-    print(utils.sha3(b''.join(arr_addr)))
-    return utils.sha3(b''.join([utils.decode_addr(x) for x in arr]))
+    return utils.sha3(b''.join([zfill(x) for x in arr]))
