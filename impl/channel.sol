@@ -11,7 +11,12 @@ contract PaymentChannelRebalanceable {
     event EventInit();
     event EventUpdate(int r);
     event LogBytes32(bytes32 b);
-    event LogAddress(address[] a);
+    event LogAddress(address a);
+    event LogInt(int i);
+    event LogUInt(uint ui);
+    event LogInts(int[2] i);
+    event LogUInts(uint[2] ui);
+    event LogBool(bool b);
     event EventPending(uint T1, uint T2);
 
     // Utility functions
@@ -58,17 +63,16 @@ contract PaymentChannelRebalanceable {
             throw;
     }
     function verifyMerkleChain(bytes32 link, bytes32[] chain, bool[] markleChainLinkleft) {
+        LogBytes32(link);
         for (uint i = 0; i < chain.length-1; i ++) {
-            link = markleChainLinkleft[i] ? sha3(chain[i], link) : sha3(link, chain[3]);
+            LogUInt(i);
+            LogBool(markleChainLinkleft[i]);
+            link = markleChainLinkleft[i] ? sha3(chain[i], link) : sha3(link, chain[i]);
+            LogBytes32(link);
+            LogBytes32(chain[i]);
+            LogBytes32(chain[i+1]);
             assert(link == chain[i+1]);
         }
-    }
-
-    // Signature struct (hacky way to enable nested array as function param)
-    struct Sig {
-        uint V;
-        uint R;
-        uint S;
     }
 
     ///////////////////////////////
@@ -165,15 +169,17 @@ contract PaymentChannelRebalanceable {
 
         // Check the signatures of all parties
         var participantsHash = sha3(participants);
-        LogAddress(participants);
-        LogBytes32(participantsHash);
         var treeRoot = transactionMerkleChain[transactionMerkleChain.length-1];
         assert(sha3(participantsHash, treeRoot) == instanceHash);
-        // verifyAllSignatures(participants, instanceHash, V, R, S);
+        verifyAllSignatures(participants, instanceHash, V, R, S);
 
         // Verify merkle chain
-        // var h = sha3(address(this), r, _credits, _withdrawals);
-        // verifyMerkleChain(h, transactionMerkleChain, markleChainLinkleft);
+        LogAddress(address(this));
+        LogInt(r);
+        LogInts(_credits);
+        LogUInts(_withdrawals);
+        var h = sha3(address(this), r, _credits, _withdrawals);
+        verifyMerkleChain(h, transactionMerkleChain, markleChainLinkleft);
 
         // Update the state
     	credits[0] = _credits[0];

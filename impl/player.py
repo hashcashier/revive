@@ -19,7 +19,7 @@ def state_to_bytes_unpack(args):
     return state_to_bytes(*args)
 
 def state_to_bytes(contract, r, credits_L, credits_R, withdrawal_L, withdrawal_R):
-    return contract +\
+    return utils.decode_addr(contract) +\
            zfill(utils.int_to_bytes(r)) +\
            zfill(int_to_bytes(credits_L)) +\
            zfill(int_to_bytes(credits_R)) +\

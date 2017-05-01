@@ -20,7 +20,9 @@ def merkle_tree(array, hash):
 
 
 def merkle_chain(merkle_tree, idx):
+    print("MERKLE CHAIN FOR:" + str(idx))
     chain = merkle_tree.get_chain(idx)
+    print(chain)
     proof = [val for (val, pos) in chain if pos not in ('SELF',)]
     sides = [pos == 'L' for (val, pos) in chain if pos not in ('SELF',)]
     return proof, sides

@@ -65,7 +65,7 @@ class PaymentSubnetParticipant:
                                                     utils.sha3)
         self.transactions_merkle_root = self.transactions_merkle_tree.build()
 
-        self.rebalance_participants = req['participants']
+        self.rebalance_participants = sorted(list(set(req['participants'])))
         self.participants_hash = hash_array(self.rebalance_participants)
 
         self.instance_hash = utils.sha3(self.participants_hash + self.transactions_merkle_root)
@@ -91,14 +91,20 @@ class PaymentSubnetParticipant:
     def update_after_rebalance(self, contract):
         player = self.contract_player[contract]
         V, R, S = [], [], []
-        for public_address in self.rebalance_signatures:
+        for public_address in self.rebalance_participants:
             v, r, s = self.rebalance_signatures[public_address]
             V.append(v)
             R.append(r.to_bytes(32, byteorder='big'))
             S.append(s.to_bytes(32, byteorder='big'))
+            assert(verify_signature(public_address, self.instance_hash, (v,r,s)))
 
+        idx = next(i for i, v in enumerate(self.rebalance_transactions) if v[0] == contract)
         chain, sides = merkle_chain(
             self.transactions_merkle_tree,
-            next(i for i, v in enumerate(self.rebalance_transactions) if v[0] == contract))
+            idx)
+
+        print("TRANSACTION")
+        print(utils.decode_addr(self.rebalance_transactions[idx][0]))
+        print(self.rebalance_transactions[idx][1:])
 
         player.update_after_rebalance(V, R, S, self.rebalance_participants, self.instance_hash, chain, sides)
