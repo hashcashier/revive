@@ -103,8 +103,4 @@ class PaymentSubnetParticipant:
             self.transactions_merkle_tree,
             idx)
 
-        print("TRANSACTION")
-        print(utils.decode_addr(self.rebalance_transactions[idx][0]))
-        print(self.rebalance_transactions[idx][1:])
-
         player.update_after_rebalance(V, R, S, self.rebalance_participants, self.instance_hash, chain, sides)

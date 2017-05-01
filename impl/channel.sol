@@ -63,16 +63,11 @@ contract PaymentChannelRebalanceable {
             throw;
     }
     function verifyMerkleChain(bytes32 link, bytes32[] chain, bool[] markleChainLinkleft) {
-        LogBytes32(link);
         for (uint i = 0; i < chain.length-1; i ++) {
-            LogUInt(i);
-            LogBool(markleChainLinkleft[i]);
             link = markleChainLinkleft[i] ? sha3(chain[i], link) : sha3(link, chain[i]);
-            LogBytes32(link);
-            LogBytes32(chain[i]);
-            LogBytes32(chain[i+1]);
-            assert(link == chain[i+1]);
         }
+        if(link != chain[chain.length-1])
+            throw;
     }
 
     ///////////////////////////////
@@ -174,10 +169,6 @@ contract PaymentChannelRebalanceable {
         verifyAllSignatures(participants, instanceHash, V, R, S);
 
         // Verify merkle chain
-        LogAddress(address(this));
-        LogInt(r);
-        LogInts(_credits);
-        LogUInts(_withdrawals);
         var h = sha3(address(this), r, _credits, _withdrawals);
         verifyMerkleChain(h, transactionMerkleChain, markleChainLinkleft);
 

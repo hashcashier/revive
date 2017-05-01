@@ -73,7 +73,7 @@ def simulation_scenario_1():
     # Leader generates rebalance transactions, requests signatures
     leader.rebalance_transactions = [
         [contracts[0].address, 1, -50, 50, 0, 0],
-        [contracts[1].address, 1, -50, 50, 0, 0],
+        [contracts[1].address, 1, 50, -50, 0, 0],
         [contracts[2].address, 1, -50, 50, 0, 0],
     ]
     leader.generate_rebalance_set()
