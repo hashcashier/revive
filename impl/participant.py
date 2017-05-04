@@ -47,7 +47,11 @@ class PaymentSubnetParticipant:
             contract = player.contract.address
             if contract not in self.frozen_channels:
                 continue
-            resp['balances'][contract] = player.lastCommit[1:]
+            resp['balances'][contract] = (player.addrs,
+                                          player.contract.deposits(0),
+                                          player.contract.deposits(1),
+                                          player.lastCommit[1:],
+                                          player.lastRound)
 
         return resp
 

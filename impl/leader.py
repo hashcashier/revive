@@ -4,6 +4,8 @@ from typing import List
 from merkle_tree import merkle_root
 from ethereum import utils
 from crypto import verify_signature, hash_array
+from linprog import generate_transaction_set
+
 
 THRESHOLD = 0.5
 
@@ -14,7 +16,8 @@ class PaymentSubnetLeader:
         self.threshold_passed = False
         self.potentially_participating_channels = set()
         self.participating_channels = set()
-        self.channel_balances = {}
+        self.possible_channel_balances = {}
+        self.confirmed_channel_balances = {}
         self.rebalance_transactions = None
         self.rebalance_participants = None
         self.rebalance_signatures = {}
@@ -51,14 +54,16 @@ class PaymentSubnetLeader:
         assert(req['leader'] == self)
         balances = req['balances']
         for contract in balances:
-            if contract in self.channel_balances:
-                if balances[contract] != self.channel_balances[contract]:
-                    del self.channel_balances[contract]
+            if contract in self.possible_channel_balances:
+                if balances[contract] != self.possible_channel_balances[contract]:
+                    del self.possible_channel_balances[contract]
+                else:
+                    self.confirmed_channel_balances[contract] = balances[contract]
             else:
-                self.channel_balances[contract] = balances[contract]
+                self.possible_channel_balances[contract] = balances[contract]
 
     def generate_rebalance_set(self):
-        # TODO Solve Linear Program
+        self.rebalance_transactions = generate_transaction_set(self.confirmed_channel_balances)
         rebalance_participants = set()
         for participant in self.subnet_participants:
             for player in participant.player_roles:
