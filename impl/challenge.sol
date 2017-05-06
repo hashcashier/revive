@@ -26,7 +26,7 @@ contract RebalanceAvailabilityContract {
 
     function submitChallenge(bytes32 instanceHash) {
         if (challenge[instanceHash] == 0) {
-            challenge[instanceHash] = int(block.number);
+            challenge[instanceHash] = int(block.number) + CHALLENGE_VALIDITY;
         }
     }
 
@@ -39,9 +39,11 @@ contract RebalanceAvailabilityContract {
 
         bytes32 instanceHash = sha3(sha3(participants), transactionMerkleTreeRoot);
 
-        if(challenge[instanceHash] == -1)
+        int status = challenge[instanceHash];
+
+        if(status == -1)
             return;
-        else if(int(block.number) - challenge[instanceHash] > CHALLENGE_VALIDITY)
+        else if(status != 0 && int(block.number) > status)
             throw;
 
         verifyAllSignatures(participants, instanceHash, V, R, S);
