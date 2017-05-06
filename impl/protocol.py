@@ -29,18 +29,18 @@ def init_contracts(blockchain_state, channel_contract_code, challenge_contract_c
     return [blockchain_state.abi_contract(channel_contract_code,
                                           language='solidity',
                                           constructor_parameters=(challenge_contract.address, (public_addresses[i], public_addresses[j]),))
-            for i in range(0, n) for j in range(i+1, n)]
+            for i in range(0, n) for j in range(i+1, n)] + [challenge_contract]
 
 
-def init_channel_players(contracts, private_keys, public_addresses):
+def init_channel_players(blockchain_state, contracts, private_keys, public_addresses):
     players = {}
     n = len(private_keys)
     k = 0
     for i in range(0, n):
         for j in range(i+1, n):
             players[contracts[k]] = [
-                PaymentChannelPlayer(private_keys[i], 0, contracts[k], [public_addresses[i], public_addresses[j]]),
-                PaymentChannelPlayer(private_keys[j], 1, contracts[k], [public_addresses[i], public_addresses[j]])]
+                PaymentChannelPlayer(blockchain_state, private_keys[i], 0, contracts[k], [public_addresses[i], public_addresses[j]], contracts[-1]),
+                PaymentChannelPlayer(blockchain_state, private_keys[j], 1, contracts[k], [public_addresses[i], public_addresses[j]], contracts[-1])]
             completeRound(players[contracts[k]], 0, 0, 0, 0, 0)
             k += 1
     return players

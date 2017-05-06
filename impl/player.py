@@ -28,11 +28,13 @@ def state_to_bytes(contract, r, credits_L, credits_R, withdrawal_L, withdrawal_R
 
 
 class PaymentChannelPlayer():
-    def __init__(self, sk, i, contract, addrs):
+    def __init__(self, blockchain_state, sk, i, contract, addrs, challenge_contract):
+        self.blockchain_state = blockchain_state
         self.sk = sk
         self.i = i
         self.contract = contract
         self.addrs = addrs
+        self.challenge_contract = challenge_contract
         self.status = "OK"
         self.lastRound = -1
         self.lastCommit = None, (0, 0, 0, 0)
@@ -112,3 +114,20 @@ class PaymentChannelPlayer():
                                            (creditsL, creditsR),
                                            (withdrawalsL, withdrawalsR),
                                            sender=self.sk)
+
+    def issue_challenge(self, participants, merkle_root, wei):
+        #self.blockchain_state.send(self.sk, self.challenge_contract.address, wei, [participants, merkle_root])
+        self.challenge_contract.submitChallenge(participants, merkle_root, sender = self.sk, value = wei)
+
+    def respond_to_challenge(self, V, R, S, participants, merkle_chain):
+        self.challenge_contract.answerChallenge(V, R, S, participants, merkle_chain, sender = self.sk)
+
+    def update_after_rebalance_verified(self, participants, merkle_chain, sides):
+        (creditsL, creditsR, withdrawalsL, withdrawalsR) = self.lastProposed
+        self.contract.updateAfterRebalanceChallenged(participants,
+                                                     merkle_chain,
+                                                     sides,
+                                                     self.lastRound + 1,
+                                                     (creditsL, creditsR),
+                                                     (withdrawalsL, withdrawalsR),
+                                                     sender=self.sk)

@@ -74,7 +74,7 @@ contract PaymentChannelRebalanceable {
     // Constant (set in constructor)
     address[2] public players;
     mapping (address => uint) playermap;
-    RebalanceAvailabilityContract rac;
+    RebalanceAvailabilityContract public rac;
 
     /////////////////////////////////////
     // Payment Channel - Application specific data
@@ -160,7 +160,6 @@ contract PaymentChannelRebalanceable {
             S,
             participants,
             transactionMerkleChain[transactionMerkleChain.length-1]);
-
 
         updateAfterRebalanceChallenged(
             participants,

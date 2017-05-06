@@ -64,6 +64,8 @@ class PaymentSubnetParticipant:
             if contract not in channel_contracts:
                 continue
             # TODO Assert transaction validity
+            player = self.contract_player[contract]
+            player.lastProposed = (creditsL, creditsR, withdrawnL, withdrawnR)
 
         self.transactions_merkle_tree = merkle_tree([state_to_bytes_unpack(trans) for trans in self.rebalance_transactions],
                                                     utils.sha3)
@@ -108,3 +110,38 @@ class PaymentSubnetParticipant:
             idx)
 
         player.update_after_rebalance(V, R, S, self.rebalance_participants, chain, sides)
+
+    def issue_challenge(self, contract, wei):
+        player = self.contract_player[contract]
+        idx = next(i for i, v in enumerate(self.rebalance_transactions) if v[0] == contract)
+        chain, _ = merkle_chain(
+            self.transactions_merkle_tree,
+            idx)
+        player.issue_challenge(self.rebalance_participants, chain[-1], wei)
+
+    def respond_to_challenge(self, contract):
+        player = self.contract_player[contract]
+        V, R, S = [], [], []
+        for public_address in self.rebalance_participants:
+            v, r, s = self.rebalance_signatures[public_address]
+            V.append(v)
+            R.append(r.to_bytes(32, byteorder='big'))
+            S.append(s.to_bytes(32, byteorder='big'))
+            assert(verify_signature(public_address, self.instance_hash, (v,r,s)))
+
+        idx = next(i for i, v in enumerate(self.rebalance_transactions) if v[0] == contract)
+        chain, sides = merkle_chain(
+            self.transactions_merkle_tree,
+            idx)
+
+        player.respond_to_challenge(V, R, S, self.rebalance_participants, chain[-1])
+
+    def update_after_rebalance_verified(self, contract):
+        player = self.contract_player[contract]
+
+        idx = next(i for i, v in enumerate(self.rebalance_transactions) if v[0] == contract)
+        chain, sides = merkle_chain(
+            self.transactions_merkle_tree,
+            idx)
+
+        player.update_after_rebalance_verified(self.rebalance_participants, chain, sides)
