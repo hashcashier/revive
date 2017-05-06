@@ -107,4 +107,4 @@ class PaymentSubnetParticipant:
             self.transactions_merkle_tree,
             idx)
 
-        player.update_after_rebalance(V, R, S, self.rebalance_participants, self.instance_hash, chain, sides)
+        player.update_after_rebalance(V, R, S, self.rebalance_participants, chain, sides)

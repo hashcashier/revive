@@ -23,11 +23,12 @@ def completeRound(players, r, payL, payR, wdrawL, wdrawR):
     players[1].receiveSignatures(r, sigs)
 
 
-def init_contracts(blockchain_state, contract_code, public_addresses):
+def init_contracts(blockchain_state, channel_contract_code, challenge_contract_code, public_addresses):
     n = len(public_addresses)
-    return [blockchain_state.abi_contract(contract_code,
-                                  language='solidity',
-                                  constructor_parameters=((public_addresses[i], public_addresses[j]),))
+    challenge_contract = blockchain_state.abi_contract(challenge_contract_code, language='solidity')
+    return [blockchain_state.abi_contract(channel_contract_code,
+                                          language='solidity',
+                                          constructor_parameters=(challenge_contract.address, (public_addresses[i], public_addresses[j]),))
             for i in range(0, n) for j in range(i+1, n)]
 
 

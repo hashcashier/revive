@@ -22,8 +22,9 @@ def simulation_scenario_1():
     public_addresses = list(map(utils.privtoaddr, private_keys))
 
     # Create the contract
-    contract_code = open('channel.sol').read()
-    contracts = init_contracts(blockchain_state, contract_code, public_addresses)
+    channel_contract_code = open('channel.sol').read()
+    challenge_contract_code = open('challenge.sol').read()
+    contracts = init_contracts(blockchain_state, channel_contract_code, challenge_contract_code, public_addresses)
     blockchain_state.mine()
 
     # Create snapshots at each phase

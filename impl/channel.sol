@@ -1,11 +1,24 @@
 pragma solidity ^0.4.10;
 
+// External interface
+contract RebalanceAvailabilityContract {
+    function submitChallenge(bytes32 instanceHash) {}
+    function answerChallenge(
+            uint8[] V,
+            bytes32[] R,
+            bytes32[] S,
+            address[] participants,
+            bytes32 transactionMerkleTreeRoot) {}
+    function isChallengeSuccess(bytes32 instanceHash) returns(bool) {}
+}
+
+
 // Note: Initial version does NOT support concurrent conditional payments!
 
 contract PaymentChannelRebalanceable {
 
     // Blocks for grace period
-    uint constant DELTA = 10; 
+    uint constant DELTA = 10;
 
     // Events
     event EventInit();
@@ -42,26 +55,6 @@ contract PaymentChannelRebalanceable {
         if (pub != ecrecover(h,v,r,s))
             throw;
     }
-    function verifyAllSignatures(address[] pub, bytes32 h, uint8[] v, bytes32[] r, bytes32[] s) {
-        uint j = (3 - playermap[msg.sender]) - 1;
-        address counterParty = players[j];
-        bool counterPartyAgrees = false;
-
-        for (uint i = 0; i < pub.length; i++) {
-            verifySignature(
-                pub[i],
-                h,
-                v[i],      // V
-                r[i],      // R
-                s[i]);     // S
-
-            if (pub[i] == counterParty)
-                counterPartyAgrees = true;
-        }
-
-        if (!counterPartyAgrees)
-            throw;
-    }
     function verifyMerkleChain(bytes32 link, bytes32[] chain, bool[] markleChainLinkleft) {
         for (uint i = 0; i < chain.length-1; i ++) {
             link = markleChainLinkleft[i] ? sha3(chain[i], link) : sha3(link, chain[i]);
@@ -81,6 +74,7 @@ contract PaymentChannelRebalanceable {
     // Constant (set in constructor)
     address[2] public players;
     mapping (address => uint) playermap;
+    RebalanceAvailabilityContract rac;
 
     /////////////////////////////////////
     // Payment Channel - Application specific data
@@ -98,7 +92,10 @@ contract PaymentChannelRebalanceable {
 	    return sha3(r);
     }
 
-    function PaymentChannelRebalanceable(address[2] _players) {
+    function PaymentChannelRebalanceable(
+            RebalanceAvailabilityContract _rac,
+            address[2] _players) {
+        rac = _rac;
         for (uint i = 0; i < 2; i++) {
             players[i] = _players[i];
             playermap[_players[i]] = i + 1;
@@ -146,11 +143,37 @@ contract PaymentChannelRebalanceable {
 
     // State channel update function when latest change was due to rebalance
     function updateAfterRebalance(
-        uint8[] V,
-        bytes32[] R,
-        bytes32[] S,
+            uint8[] V,
+            bytes32[] R,
+            bytes32[] S,
+            address[] participants,
+            bytes32[] transactionMerkleChain,
+            bool[] markleChainLinkleft,
+            int r,
+            int[2] _credits,
+            uint[2] _withdrawals)
+                onlyplayers {
+
+        rac.answerChallenge(
+            V,
+            R,
+            S,
+            participants,
+            transactionMerkleChain[transactionMerkleChain.length-1]);
+
+
+        updateAfterRebalanceChallenged(
+            participants,
+            transactionMerkleChain,
+            markleChainLinkleft,
+            r,
+            _credits,
+            _withdrawals);
+    }
+
+    // State channel update function when latest change was due to rebalance
+    function updateAfterRebalanceChallenged(
         address[] participants,
-        bytes32 instanceHash,
         bytes32[] transactionMerkleChain,
         bool[] markleChainLinkleft,
         int r,
@@ -162,13 +185,20 @@ contract PaymentChannelRebalanceable {
         if (r <= bestRound)
             return;
 
-        // Check the signatures of all parties
-        var participantsHash = sha3(participants);
-        var treeRoot = transactionMerkleChain[transactionMerkleChain.length-1];
-        assert(sha3(participantsHash, treeRoot) == instanceHash);
-        verifyAllSignatures(participants, instanceHash, V, R, S);
+        // Check that this rebalance instance was verified
+        var instanceHash = sha3(sha3(participants), transactionMerkleChain[transactionMerkleChain.length-1]);
+        assert(rac.isChallengeSuccess(instanceHash));
 
-        // Verify merkle chain
+        // Check that counterparty was a signatory
+        uint j = (3 - playermap[msg.sender]) - 1;
+        for (uint i = 0; i < participants.length; i++) {
+            if (participants[i] == players[j])
+                break;
+            else if (i == participants.length - 1)
+                throw;
+        }
+
+        // Verify transaction membership proof
         var h = sha3(address(this), r, _credits, _withdrawals);
         verifyMerkleChain(h, transactionMerkleChain, markleChainLinkleft);
 

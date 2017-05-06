@@ -102,11 +102,10 @@ class PaymentChannelPlayer():
         sig = sigs[1] if self.i == 0 else sigs[0]
         self.contract.update(sig, self.lastRound, (creditsL, creditsR), (withdrawalsL, withdrawalsR), sender=self.sk)
 
-    def update_after_rebalance(self, V, R, S, participants, instance_hash, merkle_chain, sides):
+    def update_after_rebalance(self, V, R, S, participants, merkle_chain, sides):
         _, (creditsL, creditsR, withdrawalsL, withdrawalsR) = self.lastCommit
         self.contract.updateAfterRebalance(V, R, S,
                                            participants,
-                                           instance_hash,
                                            merkle_chain,
                                            sides,
                                            self.lastRound,
