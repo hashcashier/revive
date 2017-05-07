@@ -3,7 +3,6 @@ pragma solidity ^0.4.10;
 contract RebalanceAvailabilityContract {
     event LogInt(int i);
     event LogUInt(uint u);
-    event LogBytes32(bytes32 b);
 
     function verifySignature(address pub, bytes32 h, uint8 v, bytes32 r, bytes32 s) {
         if (pub != ecrecover(h,v,r,s))
@@ -38,20 +37,14 @@ contract RebalanceAvailabilityContract {
             address[] participants,
             bytes32 transactionMerkleTreeRoot) payable {
 
-        LogUInt(msg.value);
-
         uint response_subsidy = (GAS_PER_CHALLENGE_RESPONSE + participants.length * GAS_PER_PARTICIPANT) * GAS_PRICE_IN_WEI;
-
-        LogUInt(response_subsidy);
-
-        if (msg.value < response_subsidy)
-            throw;
 
         bytes32 instanceHash = sha3(sha3(participants), transactionMerkleTreeRoot);
 
-        if (challenge[instanceHash] == 0) {
-            challenge[instanceHash] = int(block.number + CHALLENGE_VALIDITY);
-        }
+        if (msg.value < response_subsidy || challenge[instanceHash] != 0)
+            throw;
+
+        challenge[instanceHash] = int(block.number + CHALLENGE_VALIDITY);
     }
 
     function answerChallenge(
@@ -66,8 +59,6 @@ contract RebalanceAvailabilityContract {
 
         int status = challenge[instanceHash];
 
-        LogBytes32("VERIFYING");
-
         if(status == -1)
             return;
         else if(status != 0 && int(block.number) > status)
@@ -77,8 +68,6 @@ contract RebalanceAvailabilityContract {
 
         challenge[instanceHash] = -1;
 
-        LogBytes32("VERIFIED");
-
         //LogUInt(g - msg.gas);
         //LogInt(int(GAS_PER_CHALLENGE_RESPONSE + participants.length*GAS_PER_PARTICIPANT));
         if (status != 0) {
@@ -86,7 +75,6 @@ contract RebalanceAvailabilityContract {
             var estimate = GAS_PER_CHALLENGE_RESPONSE + participants.length*GAS_PER_PARTICIPANT;
             var reimbursement = actual < estimate ? actual : estimate;
             msg.sender.transfer(reimbursement * GAS_PRICE_IN_WEI);
-            LogBytes32("REIMBURSED");
         }
     }
 
