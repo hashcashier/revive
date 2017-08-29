@@ -1,4 +1,7 @@
-from scipy.optimize import linprog
+from scipy.optimize import linprog, minimize, fmin_slsqp
+import numpy as np
+
+from cvxopt import matrix, spmatrix, solvers
 
 
 def generate_transaction_set(channel_balances):
@@ -46,6 +49,53 @@ def solve_rebalance(deltas, channel_balances):
 
     return linprog(c=c, A_ub=A, b_ub=b, bounds=bounds)
 
+"""
+def solve_rebalance_quad(deltas_out, deltas_in):
+    n = len(deltas_in)
+    objective = lambda f: -sum([x**2.0 for x in f])
+    objective_deriv = lambda dfx: np.array([-2.0*x for x in dfx])
+    objective_hess = lambda ddfx: np.array([-2.0 for x in ddfx])
+    symmetry_cons = [{'type': 'eq',
+                      'fun': lambda x: x[i*n +j] + x[j*n + i],
+                      'jac': lambda x: np.array([1.0 if p*n + q == i*n + j or q*n + p == j*n + i else 0.0 for p in range(0, n) for q in range(0, n)])
+                      } for i in range(0, n) for j in range(i+1, n)]
+    conserve_cons = [{'type': 'eq',
+                      'fun': lambda x: np.array(sum(x[i*n:i*n+n])),
+                      'jac': lambda x: np.array([1.0 if p*n + q >= i*n and p*n + q < i*n + n else 0.0 for p in range(0, n) for q in range(0, n)])
+                      } for i in range(0, n)]
+    transfer_bounds = [(-min(deltas_in[i][j], deltas_out[j][i]), min(deltas_out[i][j], deltas_in[j][i])) for i in range(0, n) for j in range(0, n)]
+    return minimize(fun=objective,
+                    #x0=np.zeros(n*n),
+                    x0=np.array([0,.5,-.5,  -.5,0,.5,  .5, -.5, 0]),
+                    jac=objective_deriv,
+                    hess=objective_hess,
+                    bounds=transfer_bounds,
+                    constraints=symmetry_cons+conserve_cons,
+                    method='COBYLA',
+                    options={'disp': True})
+
+
+def solve_rebalance_extended(deltas_in, deltas_out):
+    n = len(deltas_in)
+    m = (n*(n-1))//2
+    id = spmatrix(1.0, range(m), range(m))
+    P = id*-2.0
+    q = matrix([0.]*m)
+    G = matrix([id, -1.0*id])
+    h = matrix(
+        [min(deltas_out[i][j], deltas_in[j][i]) for i in range(0, n) for j in range(i+1, n)] +
+        [-min(deltas_in[i][j], deltas_out[j][i]) for i in range(0, n) for j in range(i+1, n)])
+    C = np.zeros((m, n))
+    k = 0
+    for i in range(0, n):
+        for j in range(i+1, n):
+            C[i][k] = 1.
+            C[j][k] = -1.
+            k = k + 1
+    A = matrix(C).trans()
+    b = matrix([0.]*n)
+    return solvers.qp(P, q, G, h, A, b)
+"""
 
 def address_index_map(channel_balances):
     idx_map = {}

@@ -22,8 +22,8 @@ contract RebalanceAvailabilityContract {
     }
 
 
-    // Challenges can be answered within 10 blocks
-    uint constant CHALLENGE_VALIDITY = 10;
+    // Challenges can be answered within 5 blocks
+    uint constant CHALLENGE_VALIDITY = 5;
     uint constant GAS_PRICE_IN_WEI = 25000000000 wei;
     // 2x sha3, storage value change, storage value load, transaction, data bytes
     uint constant GAS_PER_CHALLENGE_RESPONSE = 60 + 5000 + 200 + 21000 + 68*(32);

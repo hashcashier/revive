@@ -16,7 +16,7 @@ class PaymentSubnetParticipant:
         self.rebalance_participants = None
         self.rebalance_signatures = None
 
-    def add_payment_channel_role(self, role: PaymentChannelPlayer):
+    def add_payment_channel_role(self, role, PaymentChannelPlayer):
         self.player_roles.append(role)
 
     def send_rebalance_request(self, leader):
